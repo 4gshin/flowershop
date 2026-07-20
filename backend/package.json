@@ -1,0 +1,13 @@
+{
+  "name": "flowershop-backend",
+  "version": "1.0.0",
+  "description": "FlowerShop projesi icin backend API",
+  "main": "src/index.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js"
+  },
+  "dependencies": {},
+  "devDependencies": {}
+}

@@ -5,6 +5,7 @@ const path = require('path');
 const authRoutes = require('./routes/authRoutes');
 const categoryRoutes = require('./routes/categoryRoutes');
 const productRoutes = require('./routes/productRoutes');
+const deliveryZoneRoutes = require('./routes/deliveryZoneRoutes');
 
 const app = express();
 
@@ -15,6 +16,7 @@ app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
 app.use('/api/auth', authRoutes);
 app.use('/api/kategoriler', categoryRoutes);
 app.use('/api/urunler', productRoutes);
+app.use('/api/teslimat-bolgeleri', deliveryZoneRoutes);
 
 app.get('/api/durum', (req, res) => {
   res.json({ durum: 'calisiyor', mesaj: 'FlowerShop API aktif.' });

@@ -29,6 +29,22 @@ model Kategori {
   id       Int    @id @default(autoincrement())
   ad       String @unique
   aciklama String?
+  urunler  Urun[]
+
 
   @@map("kategoriler")
+}
+model Urun {
+  id              Int      @id @default(autoincrement())
+  ad              String
+  aciklama        String?
+  fiyat           Decimal  @db.Decimal(10, 2)
+  stokAdedi       Int      @default(0)
+  gorselUrl       String?
+  kategoriId      Int
+  kategori        Kategori @relation(fields: [kategoriId], references: [id])
+  aktif           Boolean  @default(true)
+  olusturmaTarihi DateTime @default(now())
+
+  @@map("urunler")
 }

@@ -37,6 +37,9 @@ function ProductList() {
     }
   }
 
+  // Ust kategorileri ve alt kategorileri tek bir duz listeye ceviriyoruz (filtre butonlari icin)
+  const tumKategoriler = kategoriler.flatMap((k) => [k, ...(k.altKategoriler || [])]);
+
   return (
     <div className="max-w-6xl mx-auto px-6 py-16">
       <div className="text-center mb-10">
@@ -46,7 +49,6 @@ function ProductList() {
         </h1>
       </div>
 
-      {/* Kategori filtre cubugu */}
       <div className="flex flex-wrap justify-center gap-3 mb-12">
         <button
           onClick={() => kategoriSec(null)}
@@ -56,7 +58,7 @@ function ProductList() {
         >
           Tümü
         </button>
-        {kategoriler.map((kategori) => (
+        {tumKategoriler.map((kategori) => (
           <button
             key={kategori.id}
             onClick={() => kategoriSec(kategori.ad)}

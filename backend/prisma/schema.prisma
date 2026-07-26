@@ -27,11 +27,13 @@ model Kullanici {
 }
 
 model Kategori {
-  id       Int    @id @default(autoincrement())
-  ad       String @unique
-  aciklama String?
-  urunler  Urun[]
-
+  id         Int        @id @default(autoincrement())
+  ad         String     @unique
+  aciklama   String?
+  parentId   Int?
+  ustKategori Kategori? @relation("KategoriAlt", fields: [parentId], references: [id])
+  altKategoriler Kategori[] @relation("KategoriAlt")
+  urunler    Urun[]
 
   @@map("kategoriler")
 }

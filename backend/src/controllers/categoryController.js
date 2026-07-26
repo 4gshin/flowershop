@@ -1,9 +1,12 @@
 // Kategorilerle ilgili islemleri yoneten controller
 const prisma = require('../config/db');
 
+// Ust kategorileri, alt kategorileriyle birlikte agac yapisinda dondurur
 async function kategorileriListele(req, res) {
   try {
     const kategoriler = await prisma.kategori.findMany({
+      where: { parentId: null },
+      include: { altKategoriler: { orderBy: { ad: 'asc' } } },
       orderBy: { ad: 'asc' }
     });
     return res.status(200).json(kategoriler);
@@ -15,11 +18,13 @@ async function kategorileriListele(req, res) {
 
 async function kategoriEkle(req, res) {
   try {
-    const { ad, aciklama } = req.body;
+    const { ad, aciklama, parentId } = req.body;
     if (!ad) {
       return res.status(400).json({ mesaj: 'Kategori adi zorunludur.' });
     }
-    const yeniKategori = await prisma.kategori.create({ data: { ad, aciklama } });
+    const yeniKategori = await prisma.kategori.create({
+      data: { ad, aciklama, parentId: parentId ? Number(parentId) : null }
+    });
     return res.status(201).json(yeniKategori);
   } catch (hata) {
     console.error(hata);

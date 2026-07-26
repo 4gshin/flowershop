@@ -54,7 +54,7 @@ function ProductDetail() {
           <span className="text-moss text-sm tracking-widest uppercase">{urun.kategori?.ad}</span>
           <h1 className="font-display text-4xl text-ink mt-2">{urun.ad}</h1>
           <BotanicalDivider className="w-20 mt-4" />
-          <p className="text-rose text-2xl font-medium mt-6">{Number(urun.fiyat).toFixed(2)} AZN</p>
+          <p className="text-rose text-2xl font-medium mt-6">{Number(urun.fiyat).toFixed(2)} TL</p>
           <p className="text-charcoal/70 mt-4 leading-relaxed">{urun.aciklama}</p>
 
           <div className="flex items-center gap-4 mt-8">

@@ -24,7 +24,7 @@ function ProductCard({ urun }) {
       <div className="p-5">
         <h3 className="font-display text-lg text-ink">{urun.ad}</h3>
         <p className="text-sm text-charcoal/50 mt-1">{urun.kategori?.ad}</p>
-        <p className="text-rose font-medium mt-3">{Number(urun.fiyat).toFixed(2)} AZN</p>
+        <p className="text-rose font-medium mt-3">{Number(urun.fiyat).toFixed(2)} TL</p>
       </div>
     </Link>
   );

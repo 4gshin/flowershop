@@ -14,22 +14,22 @@ async function main() {
     prisma.kategori.upsert({ where: { ad: 'Özel Günler' }, update: {}, create: { ad: 'Özel Günler', aciklama: 'Doğum günü, yıldönümü ve özel tedbirler için' } })
   ]);
 
-  // Teslimat bolgeleri (Ankara ilceleri)
+  // Teslimat bolgeleri (Ankara ilceleri, ucretler TL)
   const bolgeler = [
-    { bolgeAdi: 'Çankaya', teslimatUcreti: 5 },
-    { bolgeAdi: 'Keçiören', teslimatUcreti: 6 },
-    { bolgeAdi: 'Yenimahalle', teslimatUcreti: 6 },
-    { bolgeAdi: 'Mamak', teslimatUcreti: 7 },
-    { bolgeAdi: 'Etimesgut', teslimatUcreti: 8 },
-    { bolgeAdi: 'Sincan', teslimatUcreti: 9 },
-    { bolgeAdi: 'Altındağ', teslimatUcreti: 7 },
-    { bolgeAdi: 'Gölbaşı', teslimatUcreti: 10 }
+    { bolgeAdi: 'Çankaya', teslimatUcreti: 60 },
+    { bolgeAdi: 'Keçiören', teslimatUcreti: 75 },
+    { bolgeAdi: 'Yenimahalle', teslimatUcreti: 75 },
+    { bolgeAdi: 'Mamak', teslimatUcreti: 85 },
+    { bolgeAdi: 'Etimesgut', teslimatUcreti: 95 },
+    { bolgeAdi: 'Sincan', teslimatUcreti: 110 },
+    { bolgeAdi: 'Altındağ', teslimatUcreti: 85 },
+    { bolgeAdi: 'Gölbaşı', teslimatUcreti: 130 }
   ];
 
   for (const bolge of bolgeler) {
     await prisma.teslimatBolgesi.upsert({
       where: { bolgeAdi: bolge.bolgeAdi },
-      update: {},
+      update: { teslimatUcreti: bolge.teslimatUcreti },
       create: bolge
     });
   }
@@ -47,14 +47,14 @@ async function main() {
     }
   });
 
-  // Ornek urunler
+  // Ornek urunler (gercekci TL fiyatlari ile)
   await prisma.urun.createMany({
     data: [
-      { ad: 'Kırmızı Lale Buketi', aciklama: 'Taze kırmızı lalelerden oluşan buket', fiyat: 15, stokAdedi: 20, kategoriId: kategoriler[0].id },
-      { ad: 'Beyaz Kazablanka', aciklama: 'Beyaz lilyum/kazablanka aranjmanı', fiyat: 25, stokAdedi: 15, kategoriId: kategoriler[1].id },
-      { ad: 'Pembe Orkide', aciklama: 'Saksıda pembe orkide', fiyat: 35, stokAdedi: 10, kategoriId: kategoriler[2].id },
-      { ad: 'Kırmızı Gül Buketi (11 adet)', aciklama: 'Klasik kırmızı gül buketi', fiyat: 20, stokAdedi: 25, kategoriId: kategoriler[3].id },
-      { ad: 'Doğum Günü Özel Aranjmanı', aciklama: 'Karışık çiçek ve balon ile özel aranjman', fiyat: 40, stokAdedi: 8, kategoriId: kategoriler[4].id }
+      { ad: 'Kırmızı Lale Buketi', aciklama: 'Taze kırmızı lalelerden oluşan buket', fiyat: 320, stokAdedi: 20, kategoriId: kategoriler[0].id },
+      { ad: 'Beyaz Kazablanka', aciklama: 'Beyaz lilyum/kazablanka aranjmanı', fiyat: 450, stokAdedi: 15, kategoriId: kategoriler[1].id },
+      { ad: 'Pembe Orkide', aciklama: 'Saksıda pembe orkide', fiyat: 650, stokAdedi: 10, kategoriId: kategoriler[2].id },
+      { ad: 'Kırmızı Gül Buketi (11 adet)', aciklama: 'Klasik kırmızı gül buketi', fiyat: 550, stokAdedi: 25, kategoriId: kategoriler[3].id },
+      { ad: 'Doğum Günü Özel Aranjmanı', aciklama: 'Karışık çiçek ve balon ile özel aranjman', fiyat: 780, stokAdedi: 8, kategoriId: kategoriler[4].id }
     ]
   });
 

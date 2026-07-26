@@ -1,6 +1,21 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+@theme {
+  --color-ink: #21301F;
+  --color-ink-light: #2E4029;
+  --color-paper: #F3F1E7;
+  --color-paper-dark: #EAE7D8;
+  --color-rose: #B8737A;
+  --color-rose-light: #D0959B;
+  --color-rose-dark: #96565C;
+  --color-moss: #6B7F5B;
+  --color-moss-light: #8A9C7A;
+  --color-gold: #B8934B;
+  --color-charcoal: #2B2B26;
+
+  --font-display: 'Fraunces', serif;
+  --font-sans: 'Work Sans', sans-serif;
+}
 
 body {
   background-color: #F3F1E7;

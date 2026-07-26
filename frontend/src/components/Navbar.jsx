@@ -37,7 +37,7 @@ function Navbar() {
               </Link>
 
               {kategori.altKategoriler?.length > 0 && acikKategoriId === kategori.id && (
-                <div className="absolute top-full left-0 bg-paper border border-ink/10 rounded-xl shadow-lg py-2 min-w-[180px]">
+                <div className="absolute top-full left-0 bg-paper border border-ink/10 rounded-xl shadow-lg py-2 min-w-[180px] z-30">
                   {kategori.altKategoriler.map((alt) => (
                     <Link
                       key={alt.id}
@@ -84,9 +84,12 @@ function Navbar() {
           )}
         </div>
       </div>
-      <div className="flex justify-center pb-2">
-        <BotanicalDivider className="w-24 opacity-60" />
-      </div>
+
+      {!acikKategoriId && (
+        <div className="flex justify-center pb-2">
+          <BotanicalDivider className="w-24 opacity-60" />
+        </div>
+      )}
     </header>
   );
 }

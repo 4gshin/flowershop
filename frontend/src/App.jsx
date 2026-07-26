@@ -8,6 +8,7 @@ import ProductDetail from './pages/ProductDetail';
 import Cart from './pages/Cart';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import Checkout from './pages/Checkout';
 
 function App() {
   return (
@@ -21,6 +22,7 @@ function App() {
           <Route path="/sepet" element={<Cart />} />
           <Route path="/giris" element={<Login />} />
           <Route path="/kayit" element={<Register />} />
+          <Route path="/odeme" element={<Checkout />} />
         </Routes>
       </main>
       <Footer />

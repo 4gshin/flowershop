@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import api from '../api/axios';
 import BotanicalDivider from '../components/BotanicalDivider';
+import { sepeteEkle } from '../utils/cart';
 
 function ProductDetail() {
   const { id } = useParams();
@@ -14,17 +15,11 @@ function ProductDetail() {
     api.get(`/urunler/${id}`).then((yanit) => setUrun(yanit.data));
   }, [id]);
 
-  function sepeteEkle() {
-    const sepet = JSON.parse(localStorage.getItem('flowershop_sepet') || '[]');
-    const mevcutKalem = sepet.find((k) => k.urunId === urun.id);
+  const stoktaYok = urun && urun.stokAdedi <= 0;
 
-    if (mevcutKalem) {
-      mevcutKalem.adet += adet;
-    } else {
-      sepet.push({ urunId: urun.id, ad: urun.ad, fiyat: urun.fiyat, gorselUrl: urun.gorselUrl, adet });
-    }
-
-    localStorage.setItem('flowershop_sepet', JSON.stringify(sepet));
+  function ekle() {
+    if (stoktaYok) return;
+    sepeteEkle(urun, adet);
     setMesaj('Ürün sepete eklendi.');
   }
 
@@ -39,7 +34,12 @@ function ProductDetail() {
       </Link>
 
       <div className="grid md:grid-cols-2 gap-12 mt-8">
-        <div className="aspect-square bg-rose/10 rounded-2xl flex items-center justify-center overflow-hidden">
+        <div className={`aspect-square bg-rose/10 rounded-2xl flex items-center justify-center overflow-hidden relative ${stoktaYok ? 'grayscale opacity-60' : ''}`}>
+          {stoktaYok && (
+            <span className="absolute top-4 left-4 z-10 bg-ink text-paper text-xs px-3 py-1 rounded-full">
+              Tükendi
+            </span>
+          )}
           {urun.gorselUrl ? (
             <img src={urun.gorselUrl} alt={urun.ad} className="w-full h-full object-cover" />
           ) : (
@@ -63,17 +63,23 @@ function ProductDetail() {
               min="1"
               value={adet}
               onChange={(e) => setAdet(Number(e.target.value))}
-              className="w-20 border border-ink/20 rounded-full px-4 py-2 text-center focus:outline-none focus:ring-2 focus:ring-rose"
+              disabled={stoktaYok}
+              className="w-20 border border-ink/20 rounded-full px-4 py-2 text-center focus:outline-none focus:ring-2 focus:ring-rose disabled:opacity-50"
             />
             <button
-              onClick={sepeteEkle}
-              className="bg-ink text-paper px-8 py-3 rounded-full hover:bg-ink-light transition-colors"
+              onClick={ekle}
+              disabled={stoktaYok}
+              className={`px-8 py-3 rounded-full transition-colors ${
+                stoktaYok
+                  ? 'bg-ink/10 text-charcoal/40 cursor-not-allowed'
+                  : 'bg-ink text-paper hover:bg-ink-light'
+              }`}
             >
-              Sepete Ekle
+              {stoktaYok ? 'Stokta Yok' : 'Sepete Ekle'}
             </button>
           </div>
 
-          {mesaj && <p className="text-moss mt-4">{mesaj}</p>}
+          {mesaj && !stoktaYok && <p className="text-moss mt-4">{mesaj}</p>}
         </div>
       </div>
     </div>

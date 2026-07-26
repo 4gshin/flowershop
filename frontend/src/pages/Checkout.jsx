@@ -127,8 +127,13 @@ function Checkout() {
             <label className="block text-sm text-charcoal/70 mb-1">Alıcı Telefon</label>
             <input
               name="aliciTelefon"
-              onChange={alanDegisti}
+              type="tel"
+              inputMode="numeric"
+              value={form.aliciTelefon}
+              onChange={(e) => setForm({ ...form, aliciTelefon: e.target.value.replace(/\D/g, '') })}
               required
+              maxLength={11}
+              placeholder="05XXXXXXXXX"
               className="w-full border border-ink/20 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-rose bg-paper"
             />
           </div>

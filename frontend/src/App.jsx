@@ -9,6 +9,7 @@ import Cart from './pages/Cart';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Checkout from './pages/Checkout';
+import Account from './pages/Account';
 
 function App() {
   return (
@@ -23,6 +24,7 @@ function App() {
           <Route path="/giris" element={<Login />} />
           <Route path="/kayit" element={<Register />} />
           <Route path="/odeme" element={<Checkout />} />
+          <Route path="/hesabim" element={<Account />} />
         </Routes>
       </main>
       <Footer />

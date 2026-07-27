@@ -1,6 +1,7 @@
 // Ana sayfa - hero bolumu ve kategori vitrinini icerir
 import { Link } from 'react-router-dom';
 import BotanicalDivider from '../components/BotanicalDivider';
+import SSS from '../components/SSS';
 
 const kategoriler = [
   { ad: 'Lale', slug: 'Lale', renk: 'bg-rose/10' },
@@ -77,6 +78,7 @@ function Home() {
           </p>
         </div>
       </section>
+      <SSS />
     </div>
   );
 }

@@ -1,4 +1,4 @@
-// Kayit olma ve giris yapma islemlerini yoneten controller
+// Kayit olma, giris yapma ve profil getirme islemlerini yoneten controller
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const prisma = require('../config/db');
@@ -63,4 +63,30 @@ async function girisYap(req, res) {
   }
 }
 
-module.exports = { kayitOl, girisYap };
+// Giris yapmis kullanicinin token'dan cozulen id'sine gore kendi profil bilgilerini getirmesi
+async function profilGetir(req, res) {
+  try {
+    const kullanici = await prisma.kullanici.findUnique({
+      where: { id: req.kullanici.id },
+      select: {
+        id: true,
+        adSoyad: true,
+        email: true,
+        telefon: true,
+        adres: true,
+        rol: true
+      }
+    });
+
+    if (!kullanici) {
+      return res.status(404).json({ mesaj: 'Kullanici bulunamadi.' });
+    }
+
+    return res.status(200).json(kullanici);
+  } catch (hata) {
+    console.error(hata);
+    return res.status(500).json({ mesaj: 'Profil bilgileri alinirken bir hata olustu.' });
+  }
+}
+
+module.exports = { kayitOl, girisYap, profilGetir };

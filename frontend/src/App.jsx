@@ -12,6 +12,7 @@ import Register from './pages/Register';
 import Checkout from './pages/Checkout';
 import Account from './pages/Account';
 import NotFound from './pages/NotFound';
+import AdminLayout from './pages/admin/AdminLayout';
 
 function App() {
   return (
@@ -38,6 +39,14 @@ function App() {
             element={
               <QorunanRota>
                 <Account />
+              </QorunanRota>
+            }
+          />
+          <Route
+            path="/admin"
+            element={
+              <QorunanRota sadeceAdmin>
+                <AdminLayout />
               </QorunanRota>
             }
           />

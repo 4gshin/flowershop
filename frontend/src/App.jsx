@@ -2,6 +2,7 @@ import { Routes, Route } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import WhatsAppButon from './components/WhatsAppButon';
+import QorunanRota from './components/QorunanRota';
 import Home from './pages/Home';
 import ProductList from './pages/ProductList';
 import ProductDetail from './pages/ProductDetail';
@@ -10,6 +11,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Checkout from './pages/Checkout';
 import Account from './pages/Account';
+import NotFound from './pages/NotFound';
 
 function App() {
   return (
@@ -23,8 +25,23 @@ function App() {
           <Route path="/sepet" element={<Cart />} />
           <Route path="/giris" element={<Login />} />
           <Route path="/kayit" element={<Register />} />
-          <Route path="/odeme" element={<Checkout />} />
-          <Route path="/hesabim" element={<Account />} />
+          <Route
+            path="/odeme"
+            element={
+              <QorunanRota>
+                <Checkout />
+              </QorunanRota>
+            }
+          />
+          <Route
+            path="/hesabim"
+            element={
+              <QorunanRota>
+                <Account />
+              </QorunanRota>
+            }
+          />
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </main>
       <Footer />

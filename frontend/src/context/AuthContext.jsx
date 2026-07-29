@@ -13,7 +13,15 @@ export function AuthProvider({ children }) {
     if (token) {
       api.get('/auth/profil')
         .then((yanit) => setKullanici(yanit.data))
-        .catch(() => localStorage.removeItem('flowershop_token'))
+        .catch((hata) => {
+          // Sadece token gercekten gecersizse (401) sil.
+          // Diger hatalarda (backend henuz ayakta degil, ag sorunu vb.)
+          // token'a dokunma - kullanici gereksiz yere oturumdan atilmasin.
+          if (hata.response?.status === 401) {
+            localStorage.removeItem('flowershop_token');
+            setKullanici(null);
+          }
+        })
         .finally(() => setYukleniyor(false));
     } else {
       setYukleniyor(false);

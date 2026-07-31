@@ -3,7 +3,6 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/axios';
-import BotanicalDivider from './BotanicalDivider';
 
 function Navbar() {
   const { kullanici, cikisYap } = useAuth();
@@ -85,11 +84,7 @@ function Navbar() {
         </div>
       </div>
 
-      {!acikKategoriId && (
-        <div className="flex justify-center pb-2">
-          <BotanicalDivider className="w-24 opacity-60" />
-        </div>
-      )}
+     
     </header>
   );
 }

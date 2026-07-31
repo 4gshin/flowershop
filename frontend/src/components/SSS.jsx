@@ -1,4 +1,5 @@
-// Sikca Sorulan Sorular bolumu - kategorilere ayrilmis, accordion (acilir-kapanir) yapida
+// Sikca Sorulan Sorular bolumu - minimalist, tipografi agirlikli tasarim
+// Kategoriler ince alt cizgili sekmeler olarak, sorular sade accordion yapida
 import { useState } from 'react';
 import BotanicalDivider from './BotanicalDivider';
 
@@ -60,39 +61,65 @@ function SoruSatiri({ soru, cevap }) {
   const [acik, setAcik] = useState(false);
 
   return (
-    <div className="border-b border-ink/10 py-4">
+    <div className="border-b border-ink/8 py-5 first:pt-0">
       <button
         onClick={() => setAcik(!acik)}
-        className="w-full flex items-center justify-between text-left"
+        className="w-full flex items-center justify-between text-left gap-4"
       >
-        <span className="font-medium text-ink">{soru}</span>
-        <span className={`text-rose text-xl transition-transform ${acik ? 'rotate-45' : ''}`}>+</span>
+        <span className="text-ink">{soru}</span>
+        <svg
+          className={`w-4 h-4 text-moss shrink-0 transition-transform duration-300 ${acik ? 'rotate-180' : ''}`}
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+        >
+          <path d="M6 9l6 6 6-6" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
       </button>
-      {acik && <p className="text-charcoal/70 mt-3 leading-relaxed">{cevap}</p>}
+      {acik && (
+        <p className="text-charcoal/60 mt-3 leading-relaxed text-sm max-w-xl">
+          {cevap}
+        </p>
+      )}
     </div>
   );
 }
 
 function SSS() {
+  const [aktifIndex, setAktifIndex] = useState(0);
+
   return (
-    <section className="bg-paper-dark py-20">
-      <div className="max-w-3xl mx-auto px-6">
-        <div className="text-center mb-12">
-          <span className="text-moss text-sm tracking-widest uppercase">Merak Ettikleriniz</span>
-          <h2 className="font-display text-3xl text-ink mt-2">Sıkça Sorulan Sorular</h2>
-          <BotanicalDivider className="w-24 mx-auto mt-4" />
+    <section className="bg-paper py-24">
+      <div className="max-w-2xl mx-auto px-6">
+        <div className="text-center mb-14">
+          <span className="text-moss text-xs tracking-widest uppercase">Merak Ettikleriniz</span>
+          <h2 className="font-display text-3xl text-ink mt-3">Sıkça Sorulan Sorular</h2>
+          <BotanicalDivider className="w-20 mx-auto mt-5 opacity-70" />
         </div>
 
-        <div className="space-y-10">
-          {sorular.map((grup) => (
-            <div key={grup.kategori}>
-              <h3 className="font-display text-xl text-rose mb-2">{grup.kategori}</h3>
-              <div>
-                {grup.liste.map((s) => (
-                  <SoruSatiri key={s.soru} soru={s.soru} cevap={s.cevap} />
-                ))}
-              </div>
-            </div>
+        {/* Kategori sekmeleri - ince alt cizgili, minimal */}
+        <div className="flex justify-center gap-8 mb-10 border-b border-ink/8">
+          {sorular.map((grup, index) => (
+            <button
+              key={grup.kategori}
+              onClick={() => setAktifIndex(index)}
+              className={`relative pb-4 text-sm transition-colors ${
+                aktifIndex === index ? 'text-ink' : 'text-charcoal/40 hover:text-charcoal/70'
+              }`}
+            >
+              {grup.kategori}
+              {aktifIndex === index && (
+                <span className="absolute -bottom-px left-0 right-0 h-[2px] bg-rose rounded-full" />
+              )}
+            </button>
+          ))}
+        </div>
+
+        {/* Secilen kategorinin sorulari */}
+        <div>
+          {sorular[aktifIndex].liste.map((s) => (
+            <SoruSatiri key={s.soru} soru={s.soru} cevap={s.cevap} />
           ))}
         </div>
       </div>

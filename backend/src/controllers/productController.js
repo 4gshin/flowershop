@@ -1,5 +1,6 @@
 // Urunlerle ilgili islemleri yoneten controller
 const prisma = require('../config/db');
+const { kaydet } = require('../utils/auditLog');
 
 async function urunleriListele(req, res) {
   try {
@@ -57,6 +58,8 @@ async function urunEkle(req, res) {
       }
     });
 
+    await kaydet(req.kullanici, 'URUN_OLUSTURULDU', 'Urun', yeniUrun.id, { ad: yeniUrun.ad, fiyat: yeniUrun.fiyat });
+
     return res.status(201).json(yeniUrun);
   } catch (hata) {
     console.error(hata);
@@ -71,6 +74,9 @@ async function urunGuncelle(req, res) {
       where: { id: Number(id) },
       data: req.body
     });
+
+    await kaydet(req.kullanici, 'URUN_GUNCELLENDI', 'Urun', guncellenenUrun.id, req.body);
+
     return res.status(200).json(guncellenenUrun);
   } catch (hata) {
     console.error(hata);
@@ -81,7 +87,10 @@ async function urunGuncelle(req, res) {
 async function urunSil(req, res) {
   try {
     const { id } = req.params;
-    await prisma.urun.update({ where: { id: Number(id) }, data: { aktif: false } });
+    const urun = await prisma.urun.update({ where: { id: Number(id) }, data: { aktif: false } });
+
+    await kaydet(req.kullanici, 'URUN_SILINDI', 'Urun', urun.id, { ad: urun.ad });
+
     return res.status(200).json({ mesaj: 'Urun basariyla kaldirildi.' });
   } catch (hata) {
     console.error(hata);

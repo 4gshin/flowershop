@@ -1,5 +1,6 @@
 // Siparis olusturma ve siparis yonetimi ile ilgili controller
 const prisma = require('../config/db');
+const { kaydet } = require('../utils/auditLog');
 
 async function siparisOlustur(req, res) {
   try {
@@ -20,44 +21,70 @@ async function siparisOlustur(req, res) {
       return res.status(404).json({ mesaj: 'Secilen teslimat bolgesi bulunamadi.' });
     }
 
-    let urunToplami = 0;
-    const kalemVerileri = [];
+    const sonuc = await prisma.$transaction(async (tx) => {
+      let urunToplami = 0;
+      const kalemVerileri = [];
 
-    for (const kalem of urunler) {
-      const urun = await prisma.urun.findUnique({ where: { id: Number(kalem.urunId) } });
-      if (!urun) {
-        return res.status(404).json({ mesaj: `Urun bulunamadi (id: ${kalem.urunId}).` });
+      for (const kalem of urunler) {
+        const urun = await tx.urun.findUnique({ where: { id: Number(kalem.urunId) } });
+        if (!urun) {
+          throw new Error(`STOK_HATASI:Urun bulunamadi (id: ${kalem.urunId}).`);
+        }
+
+        const guncelleme = await tx.urun.updateMany({
+          where: {
+            id: urun.id,
+            stokAdedi: { gte: kalem.adet }
+          },
+          data: {
+            stokAdedi: { decrement: kalem.adet }
+          }
+        });
+
+        if (guncelleme.count === 0) {
+          throw new Error(`STOK_HATASI:"${urun.ad}" urunu icin yeterli stok bulunmuyor.`);
+        }
+
+        const birimFiyat = Number(urun.fiyat);
+        urunToplami += birimFiyat * kalem.adet;
+        kalemVerileri.push({ urunId: urun.id, adet: kalem.adet, birimFiyat });
       }
-      const birimFiyat = Number(urun.fiyat);
-      urunToplami += birimFiyat * kalem.adet;
-      kalemVerileri.push({ urunId: urun.id, adet: kalem.adet, birimFiyat });
-    }
 
-    const teslimatUcreti = Number(teslimatBolgesi.teslimatUcreti);
-    const genelToplam = urunToplami + teslimatUcreti;
+      const teslimatUcreti = Number(teslimatBolgesi.teslimatUcreti);
+      const genelToplam = urunToplami + teslimatUcreti;
 
-    const yeniSiparis = await prisma.siparis.create({
-      data: {
-        kullaniciId,
-        teslimatBolgesiId: teslimatBolgesi.id,
-        teslimatAdresi,
-        aliciAdSoyad,
-        aliciTelefon,
-        urunToplami,
-        teslimatUcreti,
-        genelToplam,
-        not,
-        kalemler: { create: kalemVerileri }
-      },
-      include: { kalemler: true, teslimatBolgesi: true }
+      const yeniSiparis = await tx.siparis.create({
+        data: {
+          kullaniciId,
+          teslimatBolgesiId: teslimatBolgesi.id,
+          teslimatAdresi,
+          aliciAdSoyad,
+          aliciTelefon,
+          urunToplami,
+          teslimatUcreti,
+          genelToplam,
+          not,
+          kalemler: { create: kalemVerileri }
+        },
+        include: { kalemler: true, teslimatBolgesi: true }
+      });
+
+      return yeniSiparis;
     });
+
+    await kaydet(req.kullanici, 'SIPARIS_OLUSTURULDU', 'Siparis', sonuc.id, { genelToplam: sonuc.genelToplam });
 
     return res.status(201).json({
       mesaj: 'Siparisiniz alindi, en kisa surede sizinle iletisime gecilecektir.',
-      siparis: yeniSiparis
+      siparis: sonuc
     });
   } catch (hata) {
     console.error(hata);
+
+    if (hata.message && hata.message.startsWith('STOK_HATASI:')) {
+      return res.status(409).json({ mesaj: hata.message.replace('STOK_HATASI:', '') });
+    }
+
     return res.status(500).json({ mesaj: 'Siparis olusturulurken bir hata olustu.' });
   }
 }
@@ -93,10 +120,14 @@ async function siparisDurumGuncelle(req, res) {
   try {
     const { id } = req.params;
     const { durum } = req.body;
+
     const guncellenenSiparis = await prisma.siparis.update({
       where: { id: Number(id) },
       data: { durum }
     });
+
+    await kaydet(req.kullanici, 'SIPARIS_DURUMU_GUNCELLENDI', 'Siparis', guncellenenSiparis.id, { yeniDurum: durum });
+
     return res.status(200).json(guncellenenSiparis);
   } catch (hata) {
     console.error(hata);
@@ -104,4 +135,9 @@ async function siparisDurumGuncelle(req, res) {
   }
 }
 
-module.exports = { siparisOlustur, kendiSiparislerimGetir, tumSiparisleriListele, siparisDurumGuncelle };
+module.exports = {
+  siparisOlustur,
+  kendiSiparislerimGetir,
+  tumSiparisleriListele,
+  siparisDurumGuncelle
+};

@@ -1,7 +1,8 @@
-// Kayit olma, giris yapma ve profil getirme islemlerini yoneten controller
+// Kayit olma ve giris yapma islemlerini yoneten controller
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const prisma = require('../config/db');
+const { kaydet } = require('../utils/auditLog');
 
 async function kayitOl(req, res) {
   try {
@@ -21,6 +22,8 @@ async function kayitOl(req, res) {
     const yeniKullanici = await prisma.kullanici.create({
       data: { adSoyad, email, sifreHash, telefon, adres }
     });
+
+    await kaydet({ id: yeniKullanici.id, email: yeniKullanici.email }, 'KAYIT_OLUSTURULDU', 'Kullanici', yeniKullanici.id);
 
     return res.status(201).json({
       mesaj: 'Kayit basariyla olusturuldu.',
@@ -52,6 +55,8 @@ async function girisYap(req, res) {
       { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
     );
 
+    await kaydet({ id: kullanici.id, email: kullanici.email }, 'GIRIS_YAPILDI', 'Kullanici', kullanici.id);
+
     return res.status(200).json({
       mesaj: 'Giris basarili.',
       token,
@@ -63,7 +68,6 @@ async function girisYap(req, res) {
   }
 }
 
-// Giris yapmis kullanicinin token'dan cozulen id'sine gore kendi profil bilgilerini getirmesi
 async function profilGetir(req, res) {
   try {
     const kullanici = await prisma.kullanici.findUnique({

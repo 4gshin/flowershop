@@ -70,12 +70,26 @@ async function urunEkle(req, res) {
 async function urunGuncelle(req, res) {
   try {
     const { id } = req.params;
+    const { ad, aciklama, fiyat, stokAdedi, kategoriId } = req.body;
+
+    const guncellenecekVeri = {};
+    if (ad !== undefined) guncellenecekVeri.ad = ad;
+    if (aciklama !== undefined) guncellenecekVeri.aciklama = aciklama;
+    if (fiyat !== undefined) guncellenecekVeri.fiyat = Number(fiyat);
+    if (stokAdedi !== undefined) guncellenecekVeri.stokAdedi = Number(stokAdedi);
+    if (kategoriId !== undefined) guncellenecekVeri.kategoriId = Number(kategoriId);
+
+    // Yeni bir gorsel yuklendiyse, gorselUrl'i guncelle; yuklenmediyse eski gorsel oldugu gibi kalir
+    if (req.file) {
+      guncellenecekVeri.gorselUrl = `/uploads/${req.file.filename}`;
+    }
+
     const guncellenenUrun = await prisma.urun.update({
       where: { id: Number(id) },
-      data: req.body
+      data: guncellenecekVeri
     });
 
-    await kaydet(req.kullanici, 'URUN_GUNCELLENDI', 'Urun', guncellenenUrun.id, req.body);
+    await kaydet(req.kullanici, 'URUN_GUNCELLENDI', 'Urun', guncellenenUrun.id, guncellenecekVeri);
 
     return res.status(200).json(guncellenenUrun);
   } catch (hata) {

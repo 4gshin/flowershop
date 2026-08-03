@@ -13,8 +13,9 @@ const upload = require('../middleware/upload');
 
 router.get('/', urunleriListele);
 router.get('/:id', urunDetayGetir);
+
 router.post('/', girisKontrolu, adminKontrolu, upload.single('gorsel'), urunEkle);
-router.put('/:id', girisKontrolu, adminKontrolu, urunGuncelle);
+router.put('/:id', girisKontrolu, adminKontrolu, upload.single('gorsel'), urunGuncelle);
 router.delete('/:id', girisKontrolu, adminKontrolu, urunSil);
 
 module.exports = router;

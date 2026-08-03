@@ -2,8 +2,15 @@
 // Kullanicinin token bilgisi otomatik olarak istek basligina eklenir
 import axios from 'axios';
 
+// Gelistirme ortaminda (VITE_API_URL tanimli degilse) '/api' kullanilir,
+// bu da vite.config.js'deki proxy sayesinde backend'e yonlendirilir.
+// Production'da VITE_API_URL degiskeni gercek backend adresini icerir.
+const API_TABAN_URL = import.meta.env.VITE_API_URL
+  ? `${import.meta.env.VITE_API_URL}/api`
+  : '/api';
+
 const api = axios.create({
-  baseURL: '/api'
+  baseURL: API_TABAN_URL
 });
 
 api.interceptors.request.use((config) => {

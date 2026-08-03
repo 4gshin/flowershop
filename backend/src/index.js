@@ -1,7 +1,9 @@
+// FlowerShop backend API - ana giris dosyasi
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+
 const authRoutes = require('./routes/authRoutes');
 const categoryRoutes = require('./routes/categoryRoutes');
 const productRoutes = require('./routes/productRoutes');
@@ -10,8 +12,15 @@ const orderRoutes = require('./routes/orderRoutes');
 
 const app = express();
 
-app.use(cors());
+// Production'da FRONTEND_URL tanimliysa sadece o adrese izin verilir,
+// tanimli degilse (yerel gelistirme) tum adreslere izin verilir.
+app.use(cors({
+  origin: process.env.FRONTEND_URL || '*'
+}));
+
 app.use(express.json());
+
+// Eski lokal gorseller icin (Cloudinary'ye gecmeden onceki veriler) statik erisim
 app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
 
 app.use('/api/auth', authRoutes);

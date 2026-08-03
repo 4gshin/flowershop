@@ -36,3 +36,28 @@ textarea:focus-visible {
   outline: 2px solid #B8737A;
   outline-offset: 2px;
 }
+/* Yumusak scroll davranisi */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Sayfa gecislerinde hafif fade-in animasyonu */
+@keyframes sayfaFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.sayfa-gecisi {
+  animation: sayfaFadeIn 0.35s ease-out;
+}
+
+/* Butonlara basildiginda hafif kuculme geri bildirimi */
+button, a {
+  -webkit-tap-highlight-color: transparent;
+}

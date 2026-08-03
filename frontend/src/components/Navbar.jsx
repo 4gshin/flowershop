@@ -75,7 +75,7 @@ function Navbar() {
               <Link to="/giris" className="text-charcoal hover:text-rose transition-colors">Giriş Yap</Link>
               <Link
                 to="/kayit"
-                className="bg-ink text-paper px-5 py-2 rounded-full hover:bg-ink-light transition-colors"
+                className="bg-ink text-paper px-5 py-2 rounded-full hover:bg-ink-light transition-all duration-200 active:scale-95"
               >
                 Kayıt Ol
               </Link>

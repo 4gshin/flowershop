@@ -45,7 +45,8 @@ async function urunEkle(req, res) {
       return res.status(400).json({ mesaj: 'Urun adi, fiyat ve kategori zorunludur.' });
     }
 
-    const gorselUrl = req.file ? `/uploads/${req.file.filename}` : null;
+    // Cloudinary kullanildiginda req.file.path zaten tam URL'dir (https://res.cloudinary.com/...)
+    const gorselUrl = req.file ? req.file.path : null;
 
     const yeniUrun = await prisma.urun.create({
       data: {
@@ -79,9 +80,8 @@ async function urunGuncelle(req, res) {
     if (stokAdedi !== undefined) guncellenecekVeri.stokAdedi = Number(stokAdedi);
     if (kategoriId !== undefined) guncellenecekVeri.kategoriId = Number(kategoriId);
 
-    // Yeni bir gorsel yuklendiyse, gorselUrl'i guncelle; yuklenmediyse eski gorsel oldugu gibi kalir
     if (req.file) {
-      guncellenecekVeri.gorselUrl = `/uploads/${req.file.filename}`;
+      guncellenecekVeri.gorselUrl = req.file.path;
     }
 
     const guncellenenUrun = await prisma.urun.update({

@@ -18,6 +18,9 @@ app.use(cors({
 }));
 
 app.use(express.json());
+const { authLimiter, genelLimiter } = require('./middleware/rateLimit');
+app.use('/api/auth', authLimiter);
+app.use('/api', genelLimiter);
 
 app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
 

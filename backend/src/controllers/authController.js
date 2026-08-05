@@ -11,6 +11,9 @@ async function kayitOl(req, res) {
     if (!adSoyad || !email || !sifre) {
       return res.status(400).json({ mesaj: 'Ad soyad, email ve sifre zorunludur.' });
     }
+    if (sifre.length < 6) {
+  return res.status(400).json({ mesaj: 'Sifre en az 6 karakter olmalidir.' });
+}
 
     const mevcutKullanici = await prisma.kullanici.findUnique({ where: { email } });
     if (mevcutKullanici) {

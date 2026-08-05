@@ -8,17 +8,14 @@ const AuditLogViewer = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [search, setSearch] = useState('');
 
-  // Sənin .env faylındakı PORT=5001 konfiqurasiyasına uyğun ağıllı URL seçimi:
+  // Dinamik API Base URL — Sənin həm 5001 lokal portunu, həm də canlı mühiti qüsursuz tanıyır
   const getBaseUrl = () => {
-    // 1. Əgər deploy platformasında (Vercel/Netlify/Render) VITE_API_URL yazılıbsa, onu götürür:
     if (import.meta.env.VITE_API_URL) {
       return import.meta.env.VITE_API_URL.replace(/\/$/, '');
     }
-    // 2. Lokalda (Vite dev server) test edərkən avtomatik sənin 5001 portundakı backend-ə bağlanır:
     if (import.meta.env.DEV) {
       return 'http://localhost:5001';
     }
-    // 3. Canlı domaində eyni server/domain üzərindən işləyirsə, birbaşa nisbi yol:
     return '';
   };
 
@@ -30,7 +27,7 @@ const AuditLogViewer = () => {
       const BASE_URL = getBaseUrl();
       const requestUrl = `${BASE_URL}/api/audit-logs?page=${page}&limit=10&search=${encodeURIComponent(search)}`;
 
-      console.log("Audit log sorğusu getdi ->", requestUrl);
+      console.log("Audit log sorğusu atıldı -> ", requestUrl);
 
       const response = await fetch(requestUrl, {
         method: 'GET',
@@ -40,6 +37,7 @@ const AuditLogViewer = () => {
         }
       });
 
+      // HTML xətanı (məs: Cannot GET /api/audit-logs) JSON parse error etmədən tuturuq
       if (!response.ok) {
         let errorMessage = `HTTP xətası! Status: ${response.status}`;
         try {
@@ -48,21 +46,25 @@ const AuditLogViewer = () => {
             errorMessage = errJson.message;
           }
         } catch (e) {
-          errorMessage = `Server xətası (${response.status}): Endpoint tapılmadı və ya icazə yoxdur.`;
+          errorMessage = `Endpoint tapılmadı və ya icazə yoxdur (${response.status}).`;
         }
         throw new Error(errorMessage);
       }
 
       const resData = await response.json();
-      console.log("Audit Log API Cavabı ->", resData);
+      console.log("Prisma-dan gələn tam cavab -> ", resData);
 
-      const logList = resData.data || resData.logs || (Array.isArray(resData) ? resData : []);
-      
-      if (Array.isArray(logList)) {
-        setLogs(logList);
-      } else {
-        setLogs([]);
+      // PRISMA DÜZƏLİŞİ: Data hansı formatda gəlirsə gəlsin, burda 100% tutub cədvələ oturdurur:
+      let logList = [];
+      if (Array.isArray(resData)) {
+        logList = resData; // res.json(logs) kimi gəlibsə
+      } else if (resData.data && Array.isArray(resData.data)) {
+        logList = resData.data; // res.json({ data: logs }) kimi gəlibsə
+      } else if (resData.logs && Array.isArray(resData.logs)) {
+        logList = resData.logs; // res.json({ logs: logs }) kimi gəlibsə
       }
+
+      setLogs(logList);
 
       if (resData.pagination?.totalPages) {
         setTotalPages(resData.pagination.totalPages);
@@ -93,7 +95,7 @@ const AuditLogViewer = () => {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
         <div>
           <h2 className="text-2xl font-bold text-gray-800">Sistem Audit Logları</h2>
-          <p className="text-sm text-gray-500">Tüm kullanıcı ve sistem işlemlerinin güvenlik geçmişi</p>
+          <p className="text-sm text-gray-500">Prisma Studio & Sistem təhlükəsizlik əməliyyatlarının cədvəli</p>
         </div>
 
         <form onSubmit={handleSearchSubmit} className="flex gap-2">
@@ -134,7 +136,7 @@ const AuditLogViewer = () => {
           <tbody className="divide-y divide-gray-100 text-sm">
             {loading ? (
               <tr>
-                <td colSpan="5" className="text-center py-8 text-gray-500">Loglar yükleniyor...</td>
+                <td colSpan="5" className="text-center py-8 text-gray-500">Loglar yüklənir...</td>
               </tr>
             ) : logs.length === 0 ? (
               <tr>

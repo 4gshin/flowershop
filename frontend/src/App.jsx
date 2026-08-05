@@ -13,7 +13,6 @@ import Checkout from './pages/Checkout';
 import Account from './pages/Account';
 import NotFound from './pages/NotFound';
 import AdminLayout from './pages/admin/AdminLayout';
-import AuditLogViewer from './components/AuditLogViewer'; // <-- Əlavə etdik
 
 function App() {
   return (
@@ -52,9 +51,7 @@ function App() {
                 <AdminLayout />
               </QorunanRota>
             }
-          >
-            <Route path="audit-logs" element={<AuditLogViewer />} />
-          </Route>
+          />
 
           <Route path="*" element={<NotFound />} />
         </Routes>

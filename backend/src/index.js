@@ -10,6 +10,8 @@ const categoryRoutes = require('./routes/categoryRoutes');
 const productRoutes = require('./routes/productRoutes');
 const deliveryZoneRoutes = require('./routes/deliveryZoneRoutes');
 const orderRoutes = require('./routes/orderRoutes');
+// 1. Audit Log Route faylını import edirik:
+const auditLogRoutes = require('./routes/auditLogRoutes'); // <-- Faylın adı tam belədirsə
 
 const app = express();
 
@@ -29,6 +31,8 @@ app.use('/api/kategoriler', categoryRoutes);
 app.use('/api/urunler', productRoutes);
 app.use('/api/teslimat-bolgeleri', deliveryZoneRoutes);
 app.use('/api/siparisler', orderRoutes);
+// 2. Audit Log endpoint-ini serverə tanıtdırırıq:
+app.use('/api/audit-logs', auditLogRoutes); // <-- BURAYA ƏLAVƏ OLUNDU
 
 app.get('/api/durum', (req, res) => {
   res.json({ durum: 'calisiyor', mesaj: 'FlowerShop API aktif.' });

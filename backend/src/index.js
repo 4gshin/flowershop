@@ -4,6 +4,7 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const selfPingBaslat = require('./utils/selfPing');
+const yorumRoutes = require('./routes/yorumRoutes');
 
 const authRoutes = require('./routes/authRoutes');
 const categoryRoutes = require('./routes/categoryRoutes');
@@ -29,6 +30,7 @@ app.use('/api/kategoriler', categoryRoutes);
 app.use('/api/urunler', productRoutes);
 app.use('/api/teslimat-bolgeleri', deliveryZoneRoutes);
 app.use('/api/siparisler', orderRoutes);
+app.use('/api/yorumlar', yorumRoutes);
 
 app.get('/api/durum', (req, res) => {
   res.json({ durum: 'calisiyor', mesaj: 'FlowerShop API aktif.' });

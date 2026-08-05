@@ -13,6 +13,7 @@ import Checkout from './pages/Checkout';
 import Account from './pages/Account';
 import NotFound from './pages/NotFound';
 import AdminLayout from './pages/admin/AdminLayout';
+import AuditLogViewer from './components/AuditLogViewer'; // <-- Əlavə etdik
 
 function App() {
   return (
@@ -42,14 +43,19 @@ function App() {
               </QorunanRota>
             }
           />
+          
+          {/* Admin Nested Routes */}
           <Route
-            path="/admin"
+            path="/admin/*"
             element={
               <QorunanRota sadeceAdmin>
                 <AdminLayout />
               </QorunanRota>
             }
-          />
+          >
+            <Route path="audit-logs" element={<AuditLogViewer />} />
+          </Route>
+
           <Route path="*" element={<NotFound />} />
         </Routes>
       </main>

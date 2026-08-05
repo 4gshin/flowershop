@@ -1,42 +1,46 @@
-const AuditLog = require('../models/AuditLog'); // DB modelinizə uyğun tənzimləyin
+const prisma = require('../config/db'); // Sənin Prisma client faylın
 
-// Audit logları gətirən controller (Pagination, Filtering, Search ilə)
+// Prisma ilə Audit logları gətirən controller (Pagination & Search)
 exports.getAuditLogs = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
 
-    const { search, action, level } = req.query;
+    const { search, action, islem } = req.query;
+    const islemFilter = action || islem;
 
-    // Dinamik filter obyekti
-    let query = {};
+    // Dinamik Prisma where obyekti
+    let where = {};
 
-    if (action) {
-      query.action = action;
-    }
-
-    if (level) {
-      query.level = level;
+    if (islemFilter) {
+      where.islem = islemFilter;
     }
 
     if (search) {
-      query.$or = [
-        { details: { $regex: search, $options: 'i' } },
-        { userEmail: { $regex: search, $options: 'i' } },
-        { ipAddress: { $regex: search, $options: 'i' } }
+      where.OR = [
+        { islem: { contains: search, mode: 'insensitive' } },
+        { kullaniciEmail: { contains: search, mode: 'insensitive' } },
+        { hedefTur: { contains: search, mode: 'insensitive' } },
+        { detay: { contains: search, mode: 'insensitive' } }
       ];
     }
 
-    const totalLogs = await AuditLog.countDocuments(query);
-    const logs = await AuditLog.find(query)
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(limit);
+    // Prisma sorğuları
+    const [totalLogs, logs] = await Promise.all([
+      prisma.auditLog.count({ where }),
+      prisma.auditLog.findMany({
+        where,
+        orderBy: { olusturmaTarihi: 'desc' },
+        skip: skip,
+        take: limit
+      })
+    ]);
 
     res.status(200).json({
       success: true,
       data: logs,
+      logs: logs, // Frontend hər iki açarı rahatlıqla oxuya bilsin deyə
       pagination: {
         totalLogs,
         currentPage: page,
@@ -45,9 +49,10 @@ exports.getAuditLogs = async (req, res) => {
       }
     });
   } catch (error) {
+    console.error('AuditLog Fetch Error:', error);
     res.status(500).json({
       success: false,
-      message: 'Audit logları gətirilərkən xəta baş verdi',
+      message: 'Audit logları getirilirken bir hata oluştu',
       error: error.message
     });
   }

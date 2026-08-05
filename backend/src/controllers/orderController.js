@@ -1,4 +1,4 @@
-// Siparis olusturma ve siparis yonetimi ile ilgili controller
+// Sipariş oluşturma ve sipariş yönetimi ile ilgili controller
 const prisma = require('../config/db');
 const { kaydet } = require('../utils/auditLog');
 
@@ -8,7 +8,7 @@ async function siparisOlustur(req, res) {
     const { urunler, teslimatBolgesiId, teslimatAdresi, aliciAdSoyad, aliciTelefon, not } = req.body;
 
     if (!urunler || urunler.length === 0) {
-      return res.status(400).json({ mesaj: 'Sepetiniz bos, siparis olusturulamaz.' });
+      return res.status(400).json({ mesaj: 'Sepetiniz boş, sipariş oluşturulamaz.' });
     }
     if (!teslimatBolgesiId || !teslimatAdresi || !aliciAdSoyad || !aliciTelefon) {
       return res.status(400).json({ mesaj: 'Teslimat bilgileri eksik.' });
@@ -18,7 +18,7 @@ async function siparisOlustur(req, res) {
       where: { id: Number(teslimatBolgesiId) }
     });
     if (!teslimatBolgesi) {
-      return res.status(404).json({ mesaj: 'Secilen teslimat bolgesi bulunamadi.' });
+      return res.status(404).json({ mesaj: 'Seçilen teslimat bölgesi bulunamadı.' });
     }
 
     const sonuc = await prisma.$transaction(async (tx) => {
@@ -28,7 +28,7 @@ async function siparisOlustur(req, res) {
       for (const kalem of urunler) {
         const urun = await tx.urun.findUnique({ where: { id: Number(kalem.urunId) } });
         if (!urun) {
-          throw new Error(`STOK_HATASI:Urun bulunamadi (id: ${kalem.urunId}).`);
+          throw new Error(`STOK_HATASI:Ürün bulunamadı (id: ${kalem.urunId}).`);
         }
 
         const guncelleme = await tx.urun.updateMany({
@@ -42,7 +42,7 @@ async function siparisOlustur(req, res) {
         });
 
         if (guncelleme.count === 0) {
-          throw new Error(`STOK_HATASI:"${urun.ad}" urunu icin yeterli stok bulunmuyor.`);
+          throw new Error(`STOK_HATASI:"${urun.ad}" ürünü için yeterli stok bulunmuyor.`);
         }
 
         const birimFiyat = Number(urun.fiyat);
@@ -72,10 +72,17 @@ async function siparisOlustur(req, res) {
       return yeniSiparis;
     });
 
-    await kaydet(req.kullanici, 'SIPARIS_OLUSTURULDU', 'Siparis', sonuc.id, { genelToplam: sonuc.genelToplam });
+    // Audit Log kaydı
+    await kaydet(
+      req.kullanici,
+      'SIPARIS_OLUSTURULDU',
+      'Siparis',
+      sonuc.id,
+      { genelToplam: sonuc.genelToplam, alici: sonuc.aliciAdSoyad }
+    );
 
     return res.status(201).json({
-      mesaj: 'Siparisiniz alindi, en kisa surede sizinle iletisime gecilecektir.',
+      mesaj: 'Siparişiniz alındı, en kısa sürede sizinle iletişime geçilecektir.',
       siparis: sonuc
     });
   } catch (hata) {
@@ -85,7 +92,7 @@ async function siparisOlustur(req, res) {
       return res.status(409).json({ mesaj: hata.message.replace('STOK_HATASI:', '') });
     }
 
-    return res.status(500).json({ mesaj: 'Siparis olusturulurken bir hata olustu.' });
+    return res.status(500).json({ mesaj: 'Sipariş oluşturulurken bir hata oluştu.' });
   }
 }
 
@@ -99,7 +106,7 @@ async function kendiSiparislerimGetir(req, res) {
     return res.status(200).json(siparisler);
   } catch (hata) {
     console.error(hata);
-    return res.status(500).json({ mesaj: 'Siparisler listelenirken bir hata olustu.' });
+    return res.status(500).json({ mesaj: 'Siparişler listelenirken bir hata oluştu.' });
   }
 }
 
@@ -112,7 +119,7 @@ async function tumSiparisleriListele(req, res) {
     return res.status(200).json(siparisler);
   } catch (hata) {
     console.error(hata);
-    return res.status(500).json({ mesaj: 'Siparisler listelenirken bir hata olustu.' });
+    return res.status(500).json({ mesaj: 'Siparişler listelenirken bir hata oluştu.' });
   }
 }
 
@@ -126,12 +133,19 @@ async function siparisDurumGuncelle(req, res) {
       data: { durum }
     });
 
-    await kaydet(req.kullanici, 'SIPARIS_DURUMU_GUNCELLENDI', 'Siparis', guncellenenSiparis.id, { yeniDurum: durum });
+    // Audit Log kaydı
+    await kaydet(
+      req.kullanici,
+      'SIPARIS_DURUMU_GUNCELLENDI',
+      'Siparis',
+      guncellenenSiparis.id,
+      { yeniDurum: durum }
+    );
 
     return res.status(200).json(guncellenenSiparis);
   } catch (hata) {
     console.error(hata);
-    return res.status(500).json({ mesaj: 'Siparis durumu guncellenirken bir hata olustu.' });
+    return res.status(500).json({ mesaj: 'Sipariş durumu güncellenirken bir hata oluştu.' });
   }
 }
 

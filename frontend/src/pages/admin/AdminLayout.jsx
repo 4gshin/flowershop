@@ -5,12 +5,14 @@ import AdminUrunler from './AdminUrunler';
 import AdminKategoriler from './AdminKategoriler';
 import AdminBolgeler from './AdminBolgeler';
 import AdminSiparisler from './AdminSiparisler';
+import AuditLogViewer from '../../components/AuditLogViewer'; // Audit Log komponenti import edildi
 
 const SEKMELER = [
   { id: 'urunler', ad: 'Ürünler' },
   { id: 'kategoriler', ad: 'Kategoriler' },
   { id: 'bolgeler', ad: 'Teslimat Bölgeleri' },
-  { id: 'siparisler', ad: 'Siparişler' }
+  { id: 'siparisler', ad: 'Siparişler' },
+  { id: 'audit', ad: 'Audit Logları' } // YENİ TAB
 ];
 
 function AdminLayout() {
@@ -45,6 +47,7 @@ function AdminLayout() {
         {aktifSekme === 'kategoriler' && <AdminKategoriler />}
         {aktifSekme === 'bolgeler' && <AdminBolgeler />}
         {aktifSekme === 'siparisler' && <AdminSiparisler />}
+        {aktifSekme === 'audit' && <AuditLogViewer />}
       </div>
     </div>
   );

@@ -8,46 +8,71 @@ const AuditLogViewer = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [search, setSearch] = useState('');
 
+  // Sənin .env faylındakı PORT=5001 konfiqurasiyasına uyğun ağıllı URL seçimi:
+  const getBaseUrl = () => {
+    // 1. Əgər deploy platformasında (Vercel/Netlify/Render) VITE_API_URL yazılıbsa, onu götürür:
+    if (import.meta.env.VITE_API_URL) {
+      return import.meta.env.VITE_API_URL.replace(/\/$/, '');
+    }
+    // 2. Lokalda (Vite dev server) test edərkən avtomatik sənin 5001 portundakı backend-ə bağlanır:
+    if (import.meta.env.DEV) {
+      return 'http://localhost:5001';
+    }
+    // 3. Canlı domaində eyni server/domain üzərindən işləyirsə, birbaşa nisbi yol:
+    return '';
+  };
+
   const fetchLogs = async () => {
     setLoading(true);
     setError(null);
     try {
       const token = localStorage.getItem('token');
-      
-      // 1. DÜZƏLİŞ: Base API URL təyini (Render backend URL-ini fallback olaraq verdik)
-      const BASE_URL = import.meta.env.VITE_API_URL || 'https://RENDER-BACKEND-ADINIZ.onrender.com';
-      
-      // Nisbi yox, tam (Absolute) URL istifadə olunur
+      const BASE_URL = getBaseUrl();
       const requestUrl = `${BASE_URL}/api/audit-logs?page=${page}&limit=10&search=${encodeURIComponent(search)}`;
 
-      console.log("Audit log sorğusu atılır:", requestUrl);
+      console.log("Audit log sorğusu getdi ->", requestUrl);
 
       const response = await fetch(requestUrl, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
         }
       });
 
       if (!response.ok) {
-        const errJson = await response.json().catch(() => ({}));
-        throw new Error(errJson.message || `HTTP xətası! Status: ${response.status}`);
+        let errorMessage = `HTTP xətası! Status: ${response.status}`;
+        try {
+          const errJson = await response.json();
+          if (errJson && errJson.message) {
+            errorMessage = errJson.message;
+          }
+        } catch (e) {
+          errorMessage = `Server xətası (${response.status}): Endpoint tapılmadı və ya icazə yoxdur.`;
+        }
+        throw new Error(errorMessage);
       }
 
       const resData = await response.json();
-      console.log("Audit Log API Yanıtı:", resData);
+      console.log("Audit Log API Cavabı ->", resData);
 
-      // Backend Prisma response uyğunlaşdırılması
       const logList = resData.data || resData.logs || (Array.isArray(resData) ? resData : []);
-      setLogs(logList);
+      
+      if (Array.isArray(logList)) {
+        setLogs(logList);
+      } else {
+        setLogs([]);
+      }
 
       if (resData.pagination?.totalPages) {
         setTotalPages(resData.pagination.totalPages);
+      } else {
+        setTotalPages(1);
       }
     } catch (err) {
-      console.error('Audit logları yüklenemedi:', err);
-      setError(err.message);
+      console.error('Audit logları yüklənə bilmədi:', err);
+      setError(err.message || 'Bilinməyən xəta baş verdi');
+      setLogs([]);
     } finally {
       setLoading(false);
     }
@@ -88,10 +113,10 @@ const AuditLogViewer = () => {
         </form>
       </div>
 
-      {/* Xəta baş verərsə vizual olaraq göstər */}
       {error && (
-        <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
-          <strong>API Bağlantı Xətası:</strong> {error}
+        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+          <p className="font-bold">API Bağlantı Xətası:</p>
+          <p>{error}</p>
         </div>
       )}
 
@@ -113,20 +138,22 @@ const AuditLogViewer = () => {
               </tr>
             ) : logs.length === 0 ? (
               <tr>
-                <td colSpan="5" className="text-center py-8 text-gray-500">Henüz kaydedilmiş bir log bulunamadı.</td>
+                <td colSpan="5" className="text-center py-8 text-gray-500">
+                  {error ? 'Logları yükləmək mümkün olmadı.' : 'Henüz kaydedilmiş bir log bulunamadı.'}
+                </td>
               </tr>
             ) : (
               logs.map((log) => (
-                <tr key={log.id} className="hover:bg-gray-50 transition">
+                <tr key={log.id || Math.random()} className="hover:bg-gray-50 transition">
                   <td className="py-3 px-4 text-gray-600 whitespace-nowrap">
-                    {new Date(log.olusturmaTarihi).toLocaleString('tr-TR')}
+                    {log.olusturmaTarihi ? new Date(log.olusturmaTarihi).toLocaleString('tr-TR') : '-'}
                   </td>
                   <td className="py-3 px-4 font-medium text-gray-900">
                     {log.kullaniciEmail || (log.kullaniciId ? `ID: ${log.kullaniciId}` : 'Sistem')}
                   </td>
                   <td className="py-3 px-4">
                     <span className="px-2.5 py-1 text-xs font-semibold rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200">
-                      {log.islem}
+                      {log.islem || '-'}
                     </span>
                   </td>
                   <td className="py-3 px-4 text-gray-700 font-mono text-xs">
@@ -142,7 +169,6 @@ const AuditLogViewer = () => {
         </table>
       </div>
 
-      {/* Pagination */}
       {totalPages > 1 && (
         <div className="flex justify-between items-center mt-6 pt-4 border-t border-gray-100">
           <button

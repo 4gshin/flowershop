@@ -3,30 +3,51 @@ import React, { useState, useEffect } from 'react';
 const AuditLogViewer = () => {
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [search, setSearch] = useState('');
 
   const fetchLogs = async () => {
     setLoading(true);
+    setError(null);
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`/api/audit-logs?page=${page}&limit=10&search=${search}`, {
+      
+      // 1. DÜZƏLİŞ: Base API URL təyini (Render backend URL-ini fallback olaraq verdik)
+      const BASE_URL = import.meta.env.VITE_API_URL || 'https://RENDER-BACKEND-ADINIZ.onrender.com';
+      
+      // Nisbi yox, tam (Absolute) URL istifadə olunur
+      const requestUrl = `${BASE_URL}/api/audit-logs?page=${page}&limit=10&search=${encodeURIComponent(search)}`;
+
+      console.log("Audit log sorğusu atılır:", requestUrl);
+
+      const response = await fetch(requestUrl, {
+        method: 'GET',
         headers: {
+          'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         }
       });
-      const resData = await response.json();
 
-      // Backend-dən gələn datanı oxuyuruq
+      if (!response.ok) {
+        const errJson = await response.json().catch(() => ({}));
+        throw new Error(errJson.message || `HTTP xətası! Status: ${response.status}`);
+      }
+
+      const resData = await response.json();
+      console.log("Audit Log API Yanıtı:", resData);
+
+      // Backend Prisma response uyğunlaşdırılması
       const logList = resData.data || resData.logs || (Array.isArray(resData) ? resData : []);
       setLogs(logList);
 
       if (resData.pagination?.totalPages) {
         setTotalPages(resData.pagination.totalPages);
       }
-    } catch (error) {
-      console.error('Audit logları yüklenemedi:', error);
+    } catch (err) {
+      console.error('Audit logları yüklenemedi:', err);
+      setError(err.message);
     } finally {
       setLoading(false);
     }
@@ -66,6 +87,13 @@ const AuditLogViewer = () => {
           </button>
         </form>
       </div>
+
+      {/* Xəta baş verərsə vizual olaraq göstər */}
+      {error && (
+        <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+          <strong>API Bağlantı Xətası:</strong> {error}
+        </div>
+      )}
 
       <div className="overflow-x-auto">
         <table className="w-full text-left border-collapse">

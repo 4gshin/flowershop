@@ -42,17 +42,14 @@ function App() {
               </QorunanRota>
             }
           />
-          
-          {/* Admin Nested Routes */}
           <Route
-            path="/admin/*"
+            path="/admin"
             element={
               <QorunanRota sadeceAdmin>
                 <AdminLayout />
               </QorunanRota>
             }
           />
-
           <Route path="*" element={<NotFound />} />
         </Routes>
       </main>

@@ -1,15 +1,18 @@
 // Admin panelinde urun yonetimi - listeleme, ekleme, guncelleme (gorsel dahil), silme
 import { useEffect, useState } from 'react';
 import api from '../../api/axios';
+import Spinner from '../../components/Spinner';
+import { useToast } from '../../context/ToastContext';
 
 function AdminUrunler() {
+  const { toastGoster } = useToast();
   const [urunler, setUrunler] = useState([]);
   const [kategoriler, setKategoriler] = useState([]);
   const [form, setForm] = useState({ ad: '', aciklama: '', fiyat: '', stokAdedi: '', kategoriId: '' });
   const [gorselDosyasi, setGorselDosyasi] = useState(null);
   const [mevcutGorselUrl, setMevcutGorselUrl] = useState(null);
   const [duzenlenenId, setDuzenlenenId] = useState(null);
-  const [mesaj, setMesaj] = useState('');
+  const [gonderiliyor, setGonderiliyor] = useState(false);
   const [yukleniyor, setYukleniyor] = useState(true);
 
   const tumKategoriler = kategoriler.flatMap((k) => [k, ...(k.altKategoriler || [])]);
@@ -55,7 +58,7 @@ function AdminUrunler() {
 
   async function formGonder(e) {
     e.preventDefault();
-    setMesaj('');
+    setGonderiliyor(true);
 
     try {
       const formData = new FormData();
@@ -70,30 +73,36 @@ function AdminUrunler() {
         await api.put(`/urunler/${duzenlenenId}`, formData, {
           headers: { 'Content-Type': 'multipart/form-data' }
         });
-        setMesaj('Ürün güncellendi.');
+        toastGoster('Ürün güncellendi.', 'basari');
       } else {
         await api.post('/urunler', formData, {
           headers: { 'Content-Type': 'multipart/form-data' }
         });
-        setMesaj('Ürün eklendi.');
+        toastGoster('Ürün eklendi.', 'basari');
       }
 
       formuSifirla();
       verileriYukle();
     } catch (err) {
-      setMesaj(err.response?.data?.mesaj || 'Bir hata oluştu.');
+      toastGoster(err.response?.data?.mesaj || 'Bir hata oluştu.', 'hata');
+    } finally {
+      setGonderiliyor(false);
     }
   }
 
   async function urunSil(id) {
     if (!window.confirm('Bu ürünü kaldırmak istediğinize emin misiniz?')) return;
-    await api.delete(`/urunler/${id}`);
-    verileriYukle();
+    try {
+      await api.delete(`/urunler/${id}`);
+      toastGoster('Ürün kaldırıldı.', 'basari');
+      verileriYukle();
+    } catch (err) {
+      toastGoster('Ürün silinemedi.', 'hata');
+    }
   }
 
   return (
     <div className="grid md:grid-cols-2 gap-8">
-      {/* Form */}
       <form onSubmit={formGonder} className="space-y-3 bg-paper-dark/40 p-6 rounded-2xl border border-ink/5 h-fit">
         <h2 className="font-display text-lg text-ink mb-2">
           {duzenlenenId ? 'Ürünü Düzenle' : 'Yeni Ürün Ekle'}
@@ -170,20 +179,19 @@ function AdminUrunler() {
           )}
         </div>
 
-        {mesaj && <p className="text-sm text-moss">{mesaj}</p>}
-
         <div className="flex gap-2">
           <button
             type="submit"
-            className="flex-1 bg-ink text-paper py-2 rounded-full hover:bg-ink-light transition-colors"
+            disabled={gonderiliyor}
+            className="flex-1 bg-ink text-paper py-2 rounded-full hover:bg-ink-light transition-all duration-200 active:scale-95 disabled:opacity-60"
           >
-            {duzenlenenId ? 'Güncelle' : 'Ürünü Kaydet'}
+            {gonderiliyor ? 'Kaydediliyor...' : duzenlenenId ? 'Güncelle' : 'Ürünü Kaydet'}
           </button>
           {duzenlenenId && (
             <button
               type="button"
               onClick={formuSifirla}
-              className="px-4 py-2 rounded-full border border-ink/20 hover:bg-ink/5"
+              className="px-4 py-2 rounded-full border border-ink/20 hover:bg-ink/5 transition-all duration-200 active:scale-95"
             >
               Vazgeç
             </button>
@@ -191,11 +199,10 @@ function AdminUrunler() {
         </div>
       </form>
 
-      {/* Urun listesi */}
       <div>
         <h2 className="font-display text-lg text-ink mb-3">Mevcut Ürünler</h2>
         {yukleniyor ? (
-          <p className="text-charcoal/50 text-sm">Yükleniyor...</p>
+          <Spinner boyut="sm" />
         ) : (
           <div className="space-y-2 max-h-[32rem] overflow-y-auto pr-1">
             {urunler.map((urun) => {

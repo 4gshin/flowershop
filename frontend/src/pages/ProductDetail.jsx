@@ -4,40 +4,36 @@ import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import api from '../api/axios';
 import BotanicalDivider from '../components/BotanicalDivider';
+import Spinner from '../components/Spinner';
 import { sepeteEkle } from '../utils/cart';
 import { useAuth } from '../context/AuthContext';
+import { useToast } from '../context/ToastContext';
 
 function ProductDetail() {
   const { id } = useParams();
   const { kullanici } = useAuth();
+  const { toastGoster } = useToast();
 
   const [urun, setUrun] = useState(null);
   const [adet, setAdet] = useState(1);
-  const [mesaj, setMesaj] = useState('');
 
-  // Yorum listesi ve reyting
   const [yorumlar, setYorumlar] = useState([]);
   const [ortalamaPuan, setOrtalamaPuan] = useState(0);
   const [toplamYorum, setToplamYorum] = useState(0);
   const [yorumYukleniyor, setYorumYukleniyor] = useState(true);
 
-  // Yorum yapma izni (backend'den gelir)
   const [yorumIzni, setYorumIzni] = useState(null);
   const [izinYukleniyor, setIzinYukleniyor] = useState(false);
 
-  // Yeni yorum formu
   const [puanSecimi, setPuanSecimi] = useState(5);
   const [yorumMetni, setYorumMetni] = useState('');
   const [yorumGonderiliyor, setYorumGonderiliyor] = useState(false);
-  const [yorumHata, setYorumHata] = useState('');
-  const [yorumBasarili, setYorumBasarili] = useState('');
 
   useEffect(() => {
     api.get(`/urunler/${id}`).then((yanit) => setUrun(yanit.data));
     yorumlariGetir();
   }, [id]);
 
-  // Kullanici giris yaptiginda / urun geldiginde yorum iznini kontrol et
   useEffect(() => {
     if (kullanici && id) {
       setIzinYukleniyor(true);
@@ -69,34 +65,30 @@ function ProductDetail() {
   function ekle() {
     if (stoktaYok) return;
     sepeteEkle(urun, adet);
-    setMesaj('Ürün sepete eklendi.');
+    toastGoster(`${urun.ad} sepete eklendi`, 'basari');
   }
 
   const handleYorumGonder = async (e) => {
     e.preventDefault();
-    setYorumHata('');
-    setYorumBasarili('');
     setYorumGonderiliyor(true);
 
     try {
-      // kullaniciAd artik gonderilmiyor - backend kendi bulup ekliyor
       await api.post('/yorumlar', {
         urunId: Number(id),
         puan: Number(puanSecimi),
         yorum: yorumMetni
       });
 
-      setYorumBasarili('Değerlendirmeniz başarıyla eklendi. Teşekkür ederiz!');
+      toastGoster('Değerlendirmeniz başarıyla eklendi. Teşekkür ederiz!', 'basari');
       setYorumMetni('');
       setPuanSecimi(5);
 
-      // Yorum sonrasi izni yenile (artik "zaten yorum yapti" olacak)
       const izinYanit = await api.get(`/yorumlar/hakkim-var-mi/${id}`);
       setYorumIzni(izinYanit.data);
 
       yorumlariGetir();
     } catch (err) {
-      setYorumHata(err.response?.data?.mesaj || 'Yorum eklenirken bir hata oluştu.');
+      toastGoster(err.response?.data?.mesaj || 'Yorum eklenirken bir hata oluştu.', 'hata');
     } finally {
       setYorumGonderiliyor(false);
     }
@@ -118,10 +110,9 @@ function ProductDetail() {
   };
 
   if (!urun) {
-    return <p className="text-center py-24 text-charcoal/50">Yükleniyor...</p>;
+    return <Spinner metin="Ürün yükleniyor..." />;
   }
 
-  // Yorum bolumu icin gosterilecek icerigi hesapla
   const yorumBolumuIcerik = () => {
     if (!kullanici) {
       return (
@@ -137,7 +128,7 @@ function ProductDetail() {
     if (izinYukleniyor || !yorumIzni) {
       return (
         <div className="bg-paper-dark/30 p-6 rounded-2xl border border-ink/10">
-          <p className="text-sm text-charcoal/50">Kontrol ediliyor...</p>
+          <Spinner boyut="sm" />
         </div>
       );
     }
@@ -165,7 +156,6 @@ function ProductDetail() {
       );
     }
 
-    // yorumYapabilir === true - form goster
     return (
       <div className="bg-paper-dark/30 p-6 rounded-2xl border border-ink/10">
         <h3 className="font-display text-lg text-ink mb-4">Bir Değerlendirme Yazın</h3>
@@ -179,7 +169,7 @@ function ProductDetail() {
                   type="button"
                   key={yildiz}
                   onClick={() => setPuanSecimi(yildiz)}
-                  className="text-2xl focus:outline-none hover:scale-110 transition-transform"
+                  className="text-2xl focus:outline-none hover:scale-110 transition-transform active:scale-95"
                 >
                   <span className={yildiz <= puanSecimi ? 'text-amber-500' : 'text-gray-300'}>
                     ★
@@ -209,13 +199,10 @@ function ProductDetail() {
             Yorumunuz "{kullanici.adSoyad}" adıyla yayınlanacak.
           </p>
 
-          {yorumHata && <p className="text-xs text-rose">{yorumHata}</p>}
-          {yorumBasarili && <p className="text-xs text-moss font-medium">{yorumBasarili}</p>}
-
           <button
             type="submit"
             disabled={yorumGonderiliyor}
-            className="bg-ink text-paper px-6 py-2.5 rounded-full text-sm hover:bg-ink-light transition-colors disabled:opacity-60"
+            className="bg-ink text-paper px-6 py-2.5 rounded-full text-sm hover:bg-ink-light transition-all duration-200 active:scale-95 disabled:opacity-60"
           >
             {yorumGonderiliyor ? 'Gönderiliyor...' : 'Değerlendirmeyi Gönder'}
           </button>
@@ -251,7 +238,6 @@ function ProductDetail() {
           <span className="text-moss text-sm tracking-widest uppercase">{urun.kategori?.ad}</span>
           <h1 className="font-display text-4xl text-ink mt-2">{urun.ad}</h1>
 
-          {/* Ortalama Yildiz ve Yorum Ozeti */}
           <div className="flex items-center gap-2 mt-3">
             {yildizGoster(Math.round(ortalamaPuan), 'text-lg')}
             <span className="text-sm font-semibold text-ink">{ortalamaPuan > 0 ? ortalamaPuan : 'Yeni'}</span>
@@ -274,7 +260,7 @@ function ProductDetail() {
             <button
               onClick={ekle}
               disabled={stoktaYok}
-              className={`px-8 py-3 rounded-full transition-colors ${
+              className={`px-8 py-3 rounded-full transition-all duration-200 active:scale-95 ${
                 stoktaYok
                   ? 'bg-ink/10 text-charcoal/40 cursor-not-allowed'
                   : 'bg-ink text-paper hover:bg-ink-light'
@@ -283,22 +269,18 @@ function ProductDetail() {
               {stoktaYok ? 'Stokta Yok' : 'Sepete Ekle'}
             </button>
           </div>
-
-          {mesaj && !stoktaYok && <p className="text-moss mt-4">{mesaj}</p>}
         </div>
       </div>
 
-      {/* Yorum ve Degerlendirme Bolumu */}
       <div className="mt-20 pt-12 border-t border-ink/10">
         <h2 className="font-display text-2xl text-ink mb-6">Müşteri Değerlendirmeleri</h2>
 
         <div className="grid md:grid-cols-2 gap-12">
           {yorumBolumuIcerik()}
 
-          {/* Mevcut Yorumlar Listesi */}
           <div className="space-y-4">
             {yorumYukleniyor ? (
-              <p className="text-charcoal/50 text-sm">Yorumlar yükleniyor...</p>
+              <Spinner boyut="sm" metin="Yorumlar yükleniyor..." />
             ) : yorumlar.length === 0 ? (
               <div className="text-center py-12 bg-paper-dark/20 rounded-2xl border border-ink/5">
                 <p className="text-charcoal/60 text-sm">Henüz bir değerlendirme yapılmamış.</p>

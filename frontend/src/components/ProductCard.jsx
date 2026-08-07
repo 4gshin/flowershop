@@ -1,5 +1,5 @@
 // Urun listelerinde kullanilan kart bileseni
-// Stok durumu ve hizli "Sepete Ekle" butonu icerir
+// Stok durumu, ortalama reyting ve hizli "Sepete Ekle" butonu icerir
 import { Link } from 'react-router-dom';
 import { useState } from 'react';
 import { sepeteEkle } from '../utils/cart';
@@ -7,9 +7,10 @@ import { sepeteEkle } from '../utils/cart';
 function ProductCard({ urun }) {
   const [eklendi, setEklendi] = useState(false);
   const stoktaYok = urun.stokAdedi <= 0;
+  const puanVar = urun.ortalamaPuan > 0;
 
   function hizliEkle(e) {
-    e.preventDefault(); // Link'in tetiklenmesini engeller (detay sayfasina gitmesin)
+    e.preventDefault();
     e.stopPropagation();
     if (stoktaYok) return;
 
@@ -47,12 +48,22 @@ function ProductCard({ urun }) {
       <div className="p-5">
         <h3 className="font-display text-lg text-ink">{urun.ad}</h3>
         <p className="text-sm text-charcoal/50 mt-1">{urun.kategori?.ad}</p>
+
+        {/* Reyting - sadece yorum varsa gostererek "Yeni" temiz kalir */}
+        {puanVar && (
+          <div className="flex items-center gap-1 mt-2 text-sm">
+            <span className="text-amber-500">★</span>
+            <span className="font-medium text-ink">{urun.ortalamaPuan}</span>
+            <span className="text-charcoal/40 text-xs">({urun.toplamYorum})</span>
+          </div>
+        )}
+
         <p className="text-rose font-medium mt-3">{Number(urun.fiyat).toFixed(2)} TL</p>
 
         <button
           onClick={hizliEkle}
           disabled={stoktaYok}
-          className={`w-full mt-4 py-2 rounded-full text-sm transition-colors ${
+          className={`w-full mt-4 py-2 rounded-full text-sm transition-all duration-200 active:scale-95 ${
             stoktaYok
               ? 'bg-ink/10 text-charcoal/40 cursor-not-allowed'
               : eklendi

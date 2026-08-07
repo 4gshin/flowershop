@@ -45,8 +45,7 @@ async function urunEkle(req, res) {
       return res.status(400).json({ mesaj: 'Urun adi, fiyat ve kategori zorunludur.' });
     }
 
-    // Cloudinary kullanildiginda req.file.path zaten tam URL'dir (https://res.cloudinary.com/...)
-    const gorselUrl = req.file ? req.file.path : null;
+    const gorselUrl = req.file ? `/uploads/${req.file.filename}` : null;
 
     const yeniUrun = await prisma.urun.create({
       data: {
@@ -71,25 +70,12 @@ async function urunEkle(req, res) {
 async function urunGuncelle(req, res) {
   try {
     const { id } = req.params;
-    const { ad, aciklama, fiyat, stokAdedi, kategoriId } = req.body;
-
-    const guncellenecekVeri = {};
-    if (ad !== undefined) guncellenecekVeri.ad = ad;
-    if (aciklama !== undefined) guncellenecekVeri.aciklama = aciklama;
-    if (fiyat !== undefined) guncellenecekVeri.fiyat = Number(fiyat);
-    if (stokAdedi !== undefined) guncellenecekVeri.stokAdedi = Number(stokAdedi);
-    if (kategoriId !== undefined) guncellenecekVeri.kategoriId = Number(kategoriId);
-
-    if (req.file) {
-      guncellenecekVeri.gorselUrl = req.file.path;
-    }
-
     const guncellenenUrun = await prisma.urun.update({
       where: { id: Number(id) },
-      data: guncellenecekVeri
+      data: req.body
     });
 
-    await kaydet(req.kullanici, 'URUN_GUNCELLENDI', 'Urun', guncellenenUrun.id, guncellenecekVeri);
+    await kaydet(req.kullanici, 'URUN_GUNCELLENDI', 'Urun', guncellenenUrun.id, req.body);
 
     return res.status(200).json(guncellenenUrun);
   } catch (hata) {

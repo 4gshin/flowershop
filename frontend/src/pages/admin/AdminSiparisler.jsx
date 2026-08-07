@@ -1,6 +1,8 @@
 // Admin panelinde tum siparislerin goruntulenmesi ve durum guncellenmesi
 import { useEffect, useState } from 'react';
 import api from '../../api/axios';
+import Spinner from '../../components/Spinner';
+import { useToast } from '../../context/ToastContext';
 
 const DURUM_ETIKETLERI = {
   ALINDI: { metin: 'Alındı', renk: 'bg-gold/20 text-gold' },
@@ -13,6 +15,7 @@ const DURUM_ETIKETLERI = {
 const DURUM_SECENEKLERI = ['ALINDI', 'HAZIRLANIYOR', 'YOLDA', 'TESLIM_EDILDI', 'IPTAL'];
 
 function AdminSiparisler() {
+  const { toastGoster } = useToast();
   const [siparisler, setSiparisler] = useState([]);
   const [yukleniyor, setYukleniyor] = useState(true);
   const [filtreDurum, setFiltreDurum] = useState('');
@@ -29,8 +32,13 @@ function AdminSiparisler() {
   }, []);
 
   async function durumGuncelle(id, yeniDurum) {
-    await api.put(`/siparisler/${id}/durum`, { durum: yeniDurum });
-    setSiparisler(siparisler.map((s) => (s.id === id ? { ...s, durum: yeniDurum } : s)));
+    try {
+      await api.put(`/siparisler/${id}/durum`, { durum: yeniDurum });
+      setSiparisler(siparisler.map((s) => (s.id === id ? { ...s, durum: yeniDurum } : s)));
+      toastGoster(`Sipariş #${id} durumu güncellendi.`, 'basari');
+    } catch (err) {
+      toastGoster('Durum güncellenemedi.', 'hata');
+    }
   }
 
   const gosterilenSiparisler = filtreDurum
@@ -38,7 +46,7 @@ function AdminSiparisler() {
     : siparisler;
 
   if (yukleniyor) {
-    return <p className="text-charcoal/50 text-center py-12">Yükleniyor...</p>;
+    return <Spinner metin="Siparişler yükleniyor..." />;
   }
 
   return (

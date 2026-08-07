@@ -1,4 +1,5 @@
-// Sipariş tamamlama sayfası - teslimat bölgesi seçimine göre ücret otomatik hesaplanır
+// Siparis tamamlama sayfasi - teslimat bolgesi secimine gore ucret otomatik hesaplanir
+// Siparis sonrasi PDF makbuz indirilebilir
 import { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import api from '../api/axios';
@@ -13,11 +14,11 @@ function Checkout() {
   const [secilenBolgeId, setSecilenBolgeId] = useState('');
   const [form, setForm] = useState({ teslimatAdresi: '', aliciAdSoyad: '', aliciTelefon: '', not: '' });
   const [siparisTamamlandi, setSiparisTamamlandi] = useState(false);
+  const [siparisNo, setSiparisNo] = useState(null);
+  const [tamamlananSiparis, setTamamlananSiparis] = useState(null);
   const [hata, setHata] = useState('');
   const [gonderiliyor, setGonderiliyor] = useState(false);
   const [pdfYukleniyor, setPdfYukleniyor] = useState(false);
-
-  const [tamamlananSiparis, setTamamlananSiparis] = useState(null);
 
   const { kullanici, yukleniyor } = useAuth();
   const navigate = useNavigate();
@@ -36,7 +37,7 @@ function Checkout() {
     setForm({ ...form, [e.target.name]: e.target.value });
   }
 
-  // Güvenli ve oklch Hatası Vermeyen PDF İndirme Fonksiyonu
+  // PDF indirme - html2canvas oklch renk hatasi almasin diye makbuz alaninda saf hex kodlar kullanildi
   const handleDownloadPDF = async () => {
     const makbuzAlani = document.getElementById('receipt-print-area');
     if (!makbuzAlani) {
@@ -46,19 +47,17 @@ function Checkout() {
 
     setPdfYukleniyor(true);
     try {
-      // oklch hatasını önlemek için html2canvas'a saf HEX kodlu arka plan zorlanıyor
       const canvas = await html2canvas(makbuzAlani, {
         scale: 2,
         useCORS: true,
         backgroundColor: '#ffffff',
         logging: false,
         onclone: (clonedDoc) => {
-          // Klonlanan DOM üzerinde olası tüm oklch renk sorunlarını HEX ile eziyoruz
           const el = clonedDoc.getElementById('receipt-print-area');
           if (el) {
             el.style.backgroundColor = '#ffffff';
-            el.style.color = '#1f2937';
-            el.style.borderColor = '#e5e7eb';
+            el.style.color = '#2B2B26';
+            el.style.borderColor = '#EAE7D8';
           }
         }
       });
@@ -69,9 +68,9 @@ function Checkout() {
       const pdfYukseklik = (canvas.height * pdfGenislik) / canvas.width;
 
       pdf.addImage(imgData, 'PNG', 0, 0, pdfGenislik, pdfYukseklik);
-      pdf.save('FlowerShop-Siparis-Makbuzu.pdf');
+      pdf.save(`FlowerShop-Siparis-${siparisNo || 'Makbuzu'}.pdf`);
     } catch (err) {
-      console.error('PDF oluşturma hatası:', err);
+      console.error('PDF olusturma hatasi:', err);
       alert('PDF indirilirken bir sorun oluştu. Lütfen tekrar deneyin.');
     } finally {
       setPdfYukleniyor(false);
@@ -89,11 +88,13 @@ function Checkout() {
 
     setGonderiliyor(true);
     try {
-      await api.post('/siparisler', {
+      const yanit = await api.post('/siparisler', {
         urunler: sepet.map((k) => ({ urunId: k.urunId, adet: k.adet })),
         teslimatBolgesiId: Number(secilenBolgeId),
         ...form
       });
+
+      setSiparisNo(yanit.data.siparis?.id || yanit.data.id || null);
 
       setTamamlananSiparis({
         form: { ...form },
@@ -115,136 +116,165 @@ function Checkout() {
   }
 
   if (yukleniyor) {
-    return <p className="text-center py-24" style={{ color: '#6b7280' }}>Yükleniyor...</p>;
-  }
-
-  if (!kullanici) {
-    return (
-      <div className="max-w-md mx-auto px-6 py-24 text-center">
-        <h1 className="font-display text-2xl mb-4" style={{ color: '#1f2937' }}>Giriş Yapmanız Gerekiyor</h1>
-        <p className="mb-6" style={{ color: '#4b5563' }}>Sipariş verebilmek için önce giriş yapmalısınız.</p>
-        <Link
-          to="/giris"
-          className="inline-block px-8 py-3 rounded-full transition-colors"
-          style={{ backgroundColor: '#111827', color: '#ffffff' }}
-        >
-          Giriş Yap
-        </Link>
-      </div>
-    );
+    return <p className="text-center py-24 text-charcoal/50">Yükleniyor...</p>;
   }
 
   if (sepet.length === 0 && !siparisTamamlandi) {
     return (
       <div className="max-w-md mx-auto px-6 py-24 text-center">
-        <p className="mb-4" style={{ color: '#6b7280' }}>Sepetiniz boş.</p>
-        <Link to="/urunler" className="hover:underline" style={{ color: '#e11d48' }}>Ürünlere göz atın &rarr;</Link>
+        <p className="text-charcoal/60 mb-4">Sepetiniz boş.</p>
+        <Link to="/urunler" className="text-rose hover:underline">
+          Ürünlere göz atın &rarr;
+        </Link>
       </div>
     );
   }
 
-  // SİPARİŞ BAŞARIYLA ALINDIĞINDA GÖRÜNECEK MAKBUZ VE PDF EKRANI
+  // Siparis tamamlandi ekrani - makbuz ve PDF indirme
   if (siparisTamamlandi && tamamlananSiparis) {
     return (
       <div className="max-w-xl mx-auto px-6 py-12">
+        <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-moss/20 flex items-center justify-center">
+          <svg className="w-10 h-10 text-moss" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+            <path d="M5 13l4 4L19 7" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </div>
+
         <BotanicalDivider className="w-24 mx-auto mb-6" />
-        <h1 className="font-display text-3xl text-center" style={{ color: '#111827' }}>Siparişiniz Alındı</h1>
-        <p className="mt-2 text-center text-sm mb-8" style={{ color: '#4b5563' }}>
-          En kısa sürede sizinle iletişime geçilecektir.
+
+        <h1 className="font-display text-3xl text-center text-ink">Siparişiniz Alındı</h1>
+
+        {siparisNo && (
+          <div className="mt-6 flex justify-center">
+            <div className="bg-paper-dark/50 border border-ink/10 rounded-2xl px-8 py-4 text-center">
+              <p className="text-xs text-charcoal/60 uppercase tracking-widest">Sipariş Numaranız</p>
+              <p className="font-display text-2xl text-rose mt-1">#{siparisNo}</p>
+            </div>
+          </div>
+        )}
+
+        <p className="text-charcoal/70 mt-6 text-center max-w-md mx-auto leading-relaxed">
+          En kısa sürede sizinle iletişime geçilecektir. Aşağıdaki makbuzu PDF olarak indirebilirsiniz.
         </p>
 
-        {/* ================= PDF OLARAK ÇIKARILACAK MAKBUZ ALANI ================= */}
-        {/* html2canvas'ın oklch hatasına takılmaması için tüm renkler saf HEX / RGB ile inline verildi */}
+        {/* ============ MAKBUZ ALANI (PDF icin hex renklerle) ============ */}
         <div
           id="receipt-print-area"
-          className="p-8 rounded-2xl shadow-sm space-y-6"
-          style={{ backgroundColor: '#ffffff', border: '1px solid #e5e7eb', color: '#1f2937' }}
+          className="mt-8 p-8 rounded-2xl space-y-6"
+          style={{ backgroundColor: '#ffffff', border: '1px solid #EAE7D8', color: '#2B2B26' }}
         >
-          <div className="text-center pb-4" style={{ borderBottom: '1px solid #f3f4f6' }}>
-            <h2 className="font-display text-2xl font-bold" style={{ color: '#111827' }}>FlowerShop</h2>
-            <p className="text-xs mt-1" style={{ color: '#6b7280' }}>Sipariş Bilgilendirme & Makbuzu</p>
+          <div className="text-center pb-4" style={{ borderBottom: '1px solid #EAE7D8' }}>
+            <h2 className="font-display text-2xl font-bold" style={{ color: '#21301F' }}>FlowerShop</h2>
+            <p className="text-xs mt-1" style={{ color: '#6B7F5B' }}>Sipariş Makbuzu</p>
+            {siparisNo && (
+              <p className="text-sm mt-2 font-medium" style={{ color: '#B8737A' }}>
+                Sipariş No: #{siparisNo}
+              </p>
+            )}
             <div
               className="mt-3 inline-block px-3 py-1 text-xs font-semibold rounded-full"
-              style={{ backgroundColor: '#f0fdf4', color: '#15803d', border: '1px solid #bbf7d0' }}
+              style={{ backgroundColor: '#F3F1E7', color: '#6B7F5B', border: '1px solid #EAE7D8' }}
             >
               ✓ Sipariş Onaylandı
             </div>
           </div>
 
           <div className="space-y-2 text-sm">
-            <div className="flex justify-between pb-1.5" style={{ borderBottom: '1px solid #f9fafb' }}>
-              <span style={{ color: '#6b7280' }}>Tarih:</span>
-              <span className="font-medium" style={{ color: '#1f2937' }}>{tamamlananSiparis.tarih}</span>
+            <div className="flex justify-between pb-1.5" style={{ borderBottom: '1px solid #F3F1E7' }}>
+              <span style={{ color: '#666666' }}>Tarih:</span>
+              <span className="font-medium" style={{ color: '#2B2B26' }}>{tamamlananSiparis.tarih}</span>
             </div>
-            <div className="flex justify-between pb-1.5" style={{ borderBottom: '1px solid #f9fafb' }}>
-              <span style={{ color: '#6b7280' }}>Alıcı Ad Soyad:</span>
-              <span className="font-medium" style={{ color: '#1f2937' }}>{tamamlananSiparis.form.aliciAdSoyad}</span>
+            <div className="flex justify-between pb-1.5" style={{ borderBottom: '1px solid #F3F1E7' }}>
+              <span style={{ color: '#666666' }}>Alıcı Ad Soyad:</span>
+              <span className="font-medium" style={{ color: '#2B2B26' }}>{tamamlananSiparis.form.aliciAdSoyad}</span>
             </div>
-            <div className="flex justify-between pb-1.5" style={{ borderBottom: '1px solid #f9fafb' }}>
-              <span style={{ color: '#6b7280' }}>Telefon:</span>
-              <span className="font-medium" style={{ color: '#1f2937' }}>{tamamlananSiparis.form.aliciTelefon}</span>
+            <div className="flex justify-between pb-1.5" style={{ borderBottom: '1px solid #F3F1E7' }}>
+              <span style={{ color: '#666666' }}>Telefon:</span>
+              <span className="font-medium" style={{ color: '#2B2B26' }}>{tamamlananSiparis.form.aliciTelefon}</span>
             </div>
-            <div className="flex justify-between pb-1.5" style={{ borderBottom: '1px solid #f9fafb' }}>
-              <span style={{ color: '#6b7280' }}>Teslimat Bölgesi:</span>
-              <span className="font-medium" style={{ color: '#1f2937' }}>{tamamlananSiparis.bolgeAdi}</span>
+            <div className="flex justify-between pb-1.5" style={{ borderBottom: '1px solid #F3F1E7' }}>
+              <span style={{ color: '#666666' }}>Teslimat Bölgesi:</span>
+              <span className="font-medium" style={{ color: '#2B2B26' }}>{tamamlananSiparis.bolgeAdi}</span>
             </div>
             <div className="flex justify-between pt-1">
-              <span style={{ color: '#6b7280' }}>Adres:</span>
-              <span className="font-medium text-right max-w-[220px]" style={{ color: '#1f2937' }}>
+              <span style={{ color: '#666666' }}>Adres:</span>
+              <span className="font-medium text-right max-w-[220px]" style={{ color: '#2B2B26' }}>
                 {tamamlananSiparis.form.teslimatAdresi}
               </span>
             </div>
           </div>
 
-          <div className="pt-4" style={{ borderTop: '1px solid #f3f4f6' }}>
-            <h4 className="text-xs font-bold uppercase tracking-wider mb-3" style={{ color: '#9ca3af' }}>
+          <div className="pt-4" style={{ borderTop: '1px solid #EAE7D8' }}>
+            <h4 className="text-xs font-bold uppercase tracking-wider mb-3" style={{ color: '#6B7F5B' }}>
               Sipariş Özetiniz
             </h4>
             <div className="space-y-2">
               {tamamlananSiparis.sepet.map((item, index) => (
-                <div key={index} className="flex justify-between text-sm" style={{ color: '#374151' }}>
-                  <span>{item.ad} x {item.adet}</span>
+                <div key={index} className="flex justify-between text-sm" style={{ color: '#2B2B26' }}>
+                  <span>{item.ad} × {item.adet}</span>
                   <span className="font-medium">{(Number(item.fiyat) * item.adet).toFixed(2)} TL</span>
                 </div>
               ))}
             </div>
 
-            <div className="mt-4 pt-3 space-y-1 text-sm" style={{ borderTop: '1px solid #f3f4f6' }}>
-              <div className="flex justify-between" style={{ color: '#4b5563' }}>
+            <div className="mt-4 pt-3 space-y-1 text-sm" style={{ borderTop: '1px solid #F3F1E7' }}>
+              <div className="flex justify-between" style={{ color: '#666666' }}>
                 <span>Ürün Toplamı</span>
                 <span>{tamamlananSiparis.urunToplami.toFixed(2)} TL</span>
               </div>
-              <div className="flex justify-between" style={{ color: '#4b5563' }}>
+              <div className="flex justify-between" style={{ color: '#666666' }}>
                 <span>Teslimat Ücreti</span>
                 <span>{tamamlananSiparis.teslimatUcreti.toFixed(2)} TL</span>
               </div>
-              <div className="flex justify-between font-display text-lg pt-2 font-bold" style={{ borderTop: '1px solid #e5e7eb', color: '#111827' }}>
+              <div
+                className="flex justify-between font-display text-lg pt-2 font-bold"
+                style={{ borderTop: '1px solid #EAE7D8', color: '#21301F' }}
+              >
                 <span>Genel Toplam</span>
-                <span style={{ color: '#e11d48' }}>{tamamlananSiparis.genelToplam.toFixed(2)} TL</span>
+                <span style={{ color: '#B8737A' }}>{tamamlananSiparis.genelToplam.toFixed(2)} TL</span>
               </div>
             </div>
           </div>
 
-          <div className="pt-4 text-center text-[11px]" style={{ borderTop: '1px solid #f3f4f6', color: '#9ca3af' }}>
+          <div
+            className="pt-4 text-center text-[11px]"
+            style={{ borderTop: '1px solid #F3F1E7', color: '#6B7F5B' }}
+          >
             Bizi tercih ettiğiniz için teşekkür ederiz.
           </div>
         </div>
-        {/* ================= MAKBUZ ALANININ SONU ================= */}
+        {/* ============ MAKBUZ SONU ============ */}
 
-        <div className="flex flex-col sm:flex-row gap-3 mt-6">
+        <div className="flex flex-col sm:flex-row gap-3 mt-8">
           <button
             onClick={handleDownloadPDF}
             disabled={pdfYukleniyor}
-            className="flex-1 py-3 px-6 rounded-full font-medium shadow-sm flex items-center justify-center gap-2 disabled:opacity-50 transition-opacity"
-            style={{ backgroundColor: '#e11d48', color: '#ffffff' }}
+            className="flex-1 bg-rose text-paper py-3 px-6 rounded-full font-medium hover:bg-rose-dark transition-all duration-200 active:scale-95 disabled:opacity-60 flex items-center justify-center gap-2"
           >
-            {pdfYukleniyor ? 'PDF Hazırlanıyor...' : '📄 Makbuzu PDF İndir'}
+            {pdfYukleniyor ? (
+              'PDF Hazırlanıyor...'
+            ) : (
+              <>
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+                Makbuzu PDF İndir
+              </>
+            )}
           </button>
 
           <button
+            onClick={() => navigate('/hesabim')}
+            className="flex-1 bg-ink text-paper py-3 px-6 rounded-full font-medium hover:bg-ink-light transition-all duration-200 active:scale-95"
+          >
+            Siparişlerimi Gör
+          </button>
+        </div>
+
+        <div className="text-center mt-4">
+          <button
             onClick={() => navigate('/')}
-            className="flex-1 py-3 px-6 rounded-full font-medium text-center transition-colors"
-            style={{ backgroundColor: '#111827', color: '#ffffff' }}
+            className="text-sm text-charcoal/60 hover:text-rose transition-colors"
           >
             Ana Sayfaya Dön
           </button>
@@ -256,24 +286,23 @@ function Checkout() {
   return (
     <div className="max-w-2xl mx-auto px-6 py-16">
       <div className="text-center mb-10">
-        <span className="text-sm tracking-widest uppercase" style={{ color: '#15803d' }}>Son Adım</span>
-        <h1 className="font-display text-3xl mt-2" style={{ color: '#111827' }}>Sipariş Tamamla</h1>
+        <span className="text-moss text-sm tracking-widest uppercase">Son Adım</span>
+        <h1 className="font-display text-3xl text-ink mt-2">Sipariş Tamamla</h1>
       </div>
 
       <form onSubmit={siparisiTamamla} className="space-y-4">
         <div className="grid md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm mb-1" style={{ color: '#4b5563' }}>Alıcı Ad Soyad</label>
+            <label className="block text-sm text-charcoal/70 mb-1">Alıcı Ad Soyad</label>
             <input
               name="aliciAdSoyad"
               onChange={alanDegisti}
               required
-              className="w-full rounded-xl px-4 py-3 focus:outline-none"
-              style={{ border: '1px solid #d1d5db', backgroundColor: '#ffffff', color: '#1f2937' }}
+              className="w-full border border-ink/20 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-rose bg-paper"
             />
           </div>
           <div>
-            <label className="block text-sm mb-1" style={{ color: '#4b5563' }}>Alıcı Telefon</label>
+            <label className="block text-sm text-charcoal/70 mb-1">Alıcı Telefon</label>
             <input
               name="aliciTelefon"
               type="tel"
@@ -283,20 +312,18 @@ function Checkout() {
               required
               maxLength={11}
               placeholder="05XXXXXXXXX"
-              className="w-full rounded-xl px-4 py-3 focus:outline-none"
-              style={{ border: '1px solid #d1d5db', backgroundColor: '#ffffff', color: '#1f2937' }}
+              className="w-full border border-ink/20 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-rose bg-paper"
             />
           </div>
         </div>
 
         <div>
-          <label className="block text-sm mb-1" style={{ color: '#4b5563' }}>Teslimat Bölgesi (İlçe)</label>
+          <label className="block text-sm text-charcoal/70 mb-1">Teslimat Bölgesi (İlçe)</label>
           <select
             value={secilenBolgeId}
             onChange={(e) => setSecilenBolgeId(e.target.value)}
             required
-            className="w-full rounded-xl px-4 py-3 focus:outline-none"
-            style={{ border: '1px solid #d1d5db', backgroundColor: '#ffffff', color: '#1f2937' }}
+            className="w-full border border-ink/20 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-rose bg-paper"
           >
             <option value="">Bölge Seçin</option>
             {bolgeler.map((bolge) => (
@@ -308,29 +335,27 @@ function Checkout() {
         </div>
 
         <div>
-          <label className="block text-sm mb-1" style={{ color: '#4b5563' }}>Açık Teslimat Adresi</label>
+          <label className="block text-sm text-charcoal/70 mb-1">Açık Teslimat Adresi</label>
           <textarea
             name="teslimatAdresi"
             onChange={alanDegisti}
             required
             rows="3"
-            className="w-full rounded-xl px-4 py-3 focus:outline-none"
-            style={{ border: '1px solid #d1d5db', backgroundColor: '#ffffff', color: '#1f2937' }}
+            className="w-full border border-ink/20 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-rose bg-paper"
           />
         </div>
 
         <div>
-          <label className="block text-sm mb-1" style={{ color: '#4b5563' }}>Not (opsiyonel)</label>
+          <label className="block text-sm text-charcoal/70 mb-1">Not (opsiyonel)</label>
           <textarea
             name="not"
             onChange={alanDegisti}
             rows="2"
-            className="w-full rounded-xl px-4 py-3 focus:outline-none"
-            style={{ border: '1px solid #d1d5db', backgroundColor: '#ffffff', color: '#1f2937' }}
+            className="w-full border border-ink/20 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-rose bg-paper"
           />
         </div>
 
-        <div className="rounded-2xl p-5 space-y-2" style={{ backgroundColor: '#f9fafb', border: '1px solid #e5e7eb', color: '#374151' }}>
+        <div className="bg-paper-dark/50 rounded-2xl p-5 space-y-2 text-charcoal">
           <div className="flex justify-between text-sm">
             <span>Ürün Toplamı</span>
             <span>{urunToplami.toFixed(2)} TL</span>
@@ -339,19 +364,18 @@ function Checkout() {
             <span>Teslimat Ücreti</span>
             <span>{teslimatUcreti.toFixed(2)} TL</span>
           </div>
-          <div className="flex justify-between font-display text-lg pt-2 font-bold" style={{ borderTop: '1px solid #e5e7eb', color: '#111827' }}>
+          <div className="flex justify-between font-display text-lg text-ink pt-2 border-t border-ink/10">
             <span>Genel Toplam</span>
-            <span style={{ color: '#e11d48' }}>{genelToplam.toFixed(2)} TL</span>
+            <span className="text-rose">{genelToplam.toFixed(2)} TL</span>
           </div>
         </div>
 
-        {hata && <p className="text-sm" style={{ color: '#dc2626' }}>{hata}</p>}
+        {hata && <p className="text-sm text-rose-dark">{hata}</p>}
 
         <button
           type="submit"
           disabled={gonderiliyor}
-          className="w-full py-3 rounded-full transition-colors disabled:opacity-60 font-medium"
-          style={{ backgroundColor: '#111827', color: '#ffffff' }}
+          className="w-full bg-ink text-paper py-3 rounded-full hover:bg-ink-light transition-all duration-200 active:scale-95 disabled:opacity-60"
         >
           {gonderiliyor ? 'Sipariş oluşturuluyor...' : 'Siparişi Onayla'}
         </button>

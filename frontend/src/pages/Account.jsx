@@ -4,6 +4,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import api from '../api/axios';
 import { useAuth } from '../context/AuthContext';
 import BotanicalDivider from '../components/BotanicalDivider';
+import Spinner from '../components/Spinner';
 
 const DURUM_ETIKETLERI = {
   ALINDI: { metin: 'Alındı', renk: 'bg-gold/20 text-gold' },
@@ -35,7 +36,7 @@ function Account() {
   }, [kullanici]);
 
   if (yukleniyor || !kullanici) {
-    return <p className="text-center py-24 text-charcoal/50">Yükleniyor...</p>;
+    return <Spinner metin="Yükleniyor..." />;
   }
 
   return (
@@ -46,7 +47,6 @@ function Account() {
         <BotanicalDivider className="w-20 mx-auto mt-4" />
       </div>
 
-      {/* Profil bilgileri karti */}
       <div className="bg-paper-dark/50 rounded-2xl p-6 mb-12 grid md:grid-cols-2 gap-4">
         <div>
           <span className="text-xs text-charcoal/50 uppercase tracking-wide">E-posta</span>
@@ -62,11 +62,10 @@ function Account() {
         </div>
       </div>
 
-      {/* Siparis gecmisi */}
       <h2 className="font-display text-2xl text-ink mb-6">Siparişlerim</h2>
 
       {siparislerYukleniyor ? (
-        <p className="text-charcoal/50">Siparişler yükleniyor...</p>
+        <Spinner boyut="sm" metin="Siparişler yükleniyor..." />
       ) : siparisler.length === 0 ? (
         <div className="text-center py-12 bg-paper-dark/30 rounded-2xl">
           <p className="text-charcoal/60 mb-4">Henüz bir siparişiniz yok.</p>

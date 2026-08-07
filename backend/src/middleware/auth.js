@@ -5,7 +5,7 @@ function girisKontrolu(req, res, next) {
   const authHeader = req.headers.authorization;
 
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({ mesaj: 'Giris yapmaniz gerekiyor.' });
+    return res.status(401).json({ mesaj: 'Giriş yapmanız gerekiyor.' });
   }
 
   const token = authHeader.split(' ')[1];
@@ -15,7 +15,7 @@ function girisKontrolu(req, res, next) {
     req.kullanici = payload;
     next();
   } catch (hata) {
-    return res.status(401).json({ mesaj: 'Oturum gecersiz veya suresi dolmus.' });
+    return res.status(401).json({ mesaj: 'Oturum geçersiz veya süresi dolmuş.' });
   }
 }
 

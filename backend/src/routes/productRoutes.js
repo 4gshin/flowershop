@@ -5,11 +5,16 @@ const {
   urunDetayGetir,
   urunEkle,
   urunGuncelle,
-  urunSil
+  urunSil,
+  enCokSatilanlar
 } = require('../controllers/productController');
 const girisKontrolu = require('../middleware/auth');
 const adminKontrolu = require('../middleware/admin');
 const upload = require('../middleware/upload');
+
+// DIKKAT: /en-cok-satilanlar rotasi /:id'den ONCE tanimlanmali,
+// yoksa "en-cok-satilanlar" bir id olarak algilanir ve hata verir
+router.get('/en-cok-satilanlar', enCokSatilanlar);
 
 router.get('/', urunleriListele);
 router.get('/:id', urunDetayGetir);

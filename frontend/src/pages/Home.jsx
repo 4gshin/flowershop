@@ -1,7 +1,8 @@
-// Ana sayfa - hero bolumu ve kategori vitrinini icerir
+// Ana sayfa - hero, kategori vitrini, en cok satilanlar, teslimat bilgi, SSS
 import { Link } from 'react-router-dom';
 import BotanicalDivider from '../components/BotanicalDivider';
 import SSS from '../components/SSS';
+import EnCokSatilanlar from '../components/EnCokSatilanlar';
 
 const kategoriler = [
   { ad: 'Lale', slug: 'Lale', renk: 'bg-rose/10' },
@@ -29,7 +30,7 @@ function Home() {
             </p>
             <Link
               to="/urunler"
-              className="inline-block mt-8 bg-rose text-paper px-8 py-3 rounded-full hover:bg-rose-dark transition-colors"
+              className="inline-block mt-8 bg-rose text-paper px-8 py-3 rounded-full hover:bg-rose-dark transition-all duration-200 active:scale-95"
             >
               Koleksiyonu Keşfet
             </Link>
@@ -69,6 +70,9 @@ function Home() {
         </div>
       </section>
 
+      {/* EN COK SATILANLAR */}
+      <EnCokSatilanlar />
+
       {/* ALT BANNER - teslimat vurgusu */}
       <section className="bg-paper-dark py-16">
         <div className="max-w-4xl mx-auto px-6 text-center">
@@ -78,6 +82,7 @@ function Home() {
           </p>
         </div>
       </section>
+
       <SSS />
     </div>
   );

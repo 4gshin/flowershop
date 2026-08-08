@@ -9,15 +9,15 @@ async function kayitOl(req, res) {
     const { adSoyad, email, sifre, telefon, adres } = req.body;
 
     if (!adSoyad || !email || !sifre) {
-      return res.status(400).json({ mesaj: 'Ad soyad, email ve sifre zorunludur.' });
+      return res.status(400).json({ mesaj: 'Ad soyad, email ve şifre zorunludur.' });
     }
     if (sifre.length < 6) {
-  return res.status(400).json({ mesaj: 'Sifre en az 6 karakter olmalidir.' });
+  return res.status(400).json({ mesaj: 'Şifre en az 6 karakter olmalidır.' });
 }
 
     const mevcutKullanici = await prisma.kullanici.findUnique({ where: { email } });
     if (mevcutKullanici) {
-      return res.status(409).json({ mesaj: 'Bu email adresi ile kayitli bir kullanici zaten var.' });
+      return res.status(409).json({ mesaj: 'Bu email adresi ile kayıtlı bir kullanıcı zaten var.' });
     }
 
     const sifreHash = await bcrypt.hash(sifre, 10);
@@ -44,12 +44,12 @@ async function girisYap(req, res) {
 
     const kullanici = await prisma.kullanici.findUnique({ where: { email } });
     if (!kullanici) {
-      return res.status(401).json({ mesaj: 'Email veya sifre hatali.' });
+      return res.status(401).json({ mesaj: 'Email veya şifre hatalı.' });
     }
 
     const sifreDogruMu = await bcrypt.compare(sifre, kullanici.sifreHash);
     if (!sifreDogruMu) {
-      return res.status(401).json({ mesaj: 'Email veya sifre hatali.' });
+      return res.status(401).json({ mesaj: 'Email veya şifre hatalı.' });
     }
 
     const token = jwt.sign(
@@ -67,7 +67,7 @@ async function girisYap(req, res) {
     });
   } catch (hata) {
     console.error(hata);
-    return res.status(500).json({ mesaj: 'Giris sirasinda bir hata olustu.' });
+    return res.status(500).json({ mesaj: 'Giriş sırasında bir hata oluştu.' });
   }
 }
 

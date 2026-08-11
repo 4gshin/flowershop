@@ -11,6 +11,8 @@ const categoryRoutes = require('./routes/categoryRoutes');
 const productRoutes = require('./routes/productRoutes');
 const deliveryZoneRoutes = require('./routes/deliveryZoneRoutes');
 const orderRoutes = require('./routes/orderRoutes');
+const auditLogRoutes = require('./routes/auditLogRoutes');
+const statsRoutes = require('./routes/statsRoutes');
 
 const app = express();
 
@@ -31,6 +33,8 @@ app.use('/api/urunler', productRoutes);
 app.use('/api/teslimat-bolgeleri', deliveryZoneRoutes);
 app.use('/api/siparisler', orderRoutes);
 app.use('/api/yorumlar', yorumRoutes);
+app.use('/api/audit-loglari', auditLogRoutes);
+app.use('/api/istatistikler', statsRoutes);
 
 app.get('/api/durum', (req, res) => {
   res.json({ durum: 'calisiyor', mesaj: 'FlowerShop API aktif.' });

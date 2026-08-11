@@ -1,21 +1,24 @@
 // Admin panelinin ortak yerlesimi - sol menu (tab gecisleri) ve icerik alani
 import { useState } from 'react';
 import BotanicalDivider from '../../components/BotanicalDivider';
+import AdminDashboard from './AdminDashboard';
 import AdminUrunler from './AdminUrunler';
 import AdminKategoriler from './AdminKategoriler';
 import AdminBolgeler from './AdminBolgeler';
 import AdminSiparisler from './AdminSiparisler';
+import AdminAuditLog from './AdminAuditLog';
 
 const SEKMELER = [
+  { id: 'dashboard', ad: 'Panel' },
   { id: 'urunler', ad: 'Ürünler' },
   { id: 'kategoriler', ad: 'Kategoriler' },
   { id: 'bolgeler', ad: 'Teslimat Bölgeleri' },
   { id: 'siparisler', ad: 'Siparişler' },
-  { id: 'audit', ad: 'Audit Logları' } // YENİ TAB
+  { id: 'audit', ad: 'İşlem Geçmişi' }
 ];
 
 function AdminLayout() {
-  const [aktifSekme, setAktifSekme] = useState('urunler');
+  const [aktifSekme, setAktifSekme] = useState('dashboard');
 
   return (
     <div className="max-w-6xl mx-auto px-6 py-16">
@@ -30,7 +33,7 @@ function AdminLayout() {
           <button
             key={sekme.id}
             onClick={() => setAktifSekme(sekme.id)}
-            className={`px-5 py-2 rounded-full text-sm transition-colors ${
+            className={`px-5 py-2 rounded-full text-sm transition-all duration-200 active:scale-95 ${
               aktifSekme === sekme.id
                 ? 'bg-ink text-paper'
                 : 'text-charcoal hover:bg-ink/5'
@@ -42,10 +45,12 @@ function AdminLayout() {
       </div>
 
       <div>
+        {aktifSekme === 'dashboard' && <AdminDashboard />}
         {aktifSekme === 'urunler' && <AdminUrunler />}
         {aktifSekme === 'kategoriler' && <AdminKategoriler />}
         {aktifSekme === 'bolgeler' && <AdminBolgeler />}
         {aktifSekme === 'siparisler' && <AdminSiparisler />}
+        {aktifSekme === 'audit' && <AdminAuditLog />}
       </div>
     </div>
   );

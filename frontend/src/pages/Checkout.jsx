@@ -1,5 +1,4 @@
-// Siparis tamamlama sayfasi - teslimat bolgesi secimine gore ucret otomatik hesaplanir
-// Siparis sonrasi PDF makbuz indirilebilir
+// Siparis tamamlama sayfasi - teslimat bolgesi, kupon uygulama ve PDF makbuz
 import { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import api from '../api/axios';
@@ -20,6 +19,12 @@ function Checkout() {
   const [gonderiliyor, setGonderiliyor] = useState(false);
   const [pdfYukleniyor, setPdfYukleniyor] = useState(false);
 
+  // Kupon icin state'ler
+  const [kuponKodu, setKuponKodu] = useState('');
+  const [uygulananKupon, setUygulananKupon] = useState(null);
+  const [kuponHata, setKuponHata] = useState('');
+  const [kuponDogrulaniyor, setKuponDogrulaniyor] = useState(false);
+
   const { kullanici, yukleniyor } = useAuth();
   const navigate = useNavigate();
 
@@ -31,13 +36,45 @@ function Checkout() {
   const urunToplami = sepet.reduce((acc, k) => acc + Number(k.fiyat) * k.adet, 0);
   const secilenBolge = bolgeler.find((b) => b.id === Number(secilenBolgeId));
   const teslimatUcreti = secilenBolge ? Number(secilenBolge.teslimatUcreti) : 0;
-  const genelToplam = urunToplami + teslimatUcreti;
+  const endirimTutari = uygulananKupon ? uygulananKupon.endirimTutari : 0;
+  const genelToplam = Math.max(0, urunToplami - endirimTutari + teslimatUcreti);
 
   function alanDegisti(e) {
     setForm({ ...form, [e.target.name]: e.target.value });
   }
 
-  // PDF indirme - html2canvas oklch renk hatasi almasin diye makbuz alaninda saf hex kodlar kullanildi
+  // Kupon dogrulama - backend'e istek atar, endirim tutarini gosterir
+  async function kuponuUygula(e) {
+    e.preventDefault();
+    setKuponHata('');
+
+    if (!kuponKodu.trim()) {
+      setKuponHata('Lütfen bir kupon kodu girin.');
+      return;
+    }
+
+    setKuponDogrulaniyor(true);
+    try {
+      const yanit = await api.post('/kuponlar/dogrula', {
+        kod: kuponKodu.trim(),
+        siparisTutari: urunToplami
+      });
+
+      setUygulananKupon(yanit.data);
+      setKuponKodu('');
+    } catch (err) {
+      setKuponHata(err.response?.data?.mesaj || 'Kupon dogrulanamadi.');
+      setUygulananKupon(null);
+    } finally {
+      setKuponDogrulaniyor(false);
+    }
+  }
+
+  function kuponuKaldir() {
+    setUygulananKupon(null);
+    setKuponHata('');
+  }
+
   const handleDownloadPDF = async () => {
     const makbuzAlani = document.getElementById('receipt-print-area');
     if (!makbuzAlani) {
@@ -91,6 +128,7 @@ function Checkout() {
       const yanit = await api.post('/siparisler', {
         urunler: sepet.map((k) => ({ urunId: k.urunId, adet: k.adet })),
         teslimatBolgesiId: Number(secilenBolgeId),
+        kuponKodu: uygulananKupon ? uygulananKupon.kod : null,
         ...form
       });
 
@@ -101,6 +139,8 @@ function Checkout() {
         bolgeAdi: secilenBolge?.bolgeAdi || '',
         sepet: [...sepet],
         urunToplami,
+        endirimTutari,
+        kuponKodu: uygulananKupon?.kod || null,
         teslimatUcreti,
         genelToplam,
         tarih: new Date().toLocaleDateString('tr-TR')
@@ -110,6 +150,10 @@ function Checkout() {
       setSiparisTamamlandi(true);
     } catch (err) {
       setHata(err.response?.data?.mesaj || 'Sipariş oluşturulurken bir hata oluştu.');
+      // Kupon hatasi durumunda uygulanan kuponu temizle
+      if (err.response?.data?.mesaj?.toLowerCase().includes('kupon')) {
+        setUygulananKupon(null);
+      }
     } finally {
       setGonderiliyor(false);
     }
@@ -130,7 +174,7 @@ function Checkout() {
     );
   }
 
-  // Siparis tamamlandi ekrani - makbuz ve PDF indirme
+  // Siparis tamamlandi ekrani - makbuz ve PDF
   if (siparisTamamlandi && tamamlananSiparis) {
     return (
       <div className="max-w-xl mx-auto px-6 py-12">
@@ -157,7 +201,6 @@ function Checkout() {
           En kısa sürede sizinle iletişime geçilecektir. Aşağıdaki makbuzu PDF olarak indirebilirsiniz.
         </p>
 
-        {/* ============ MAKBUZ ALANI (PDF icin hex renklerle) ============ */}
         <div
           id="receipt-print-area"
           className="mt-8 p-8 rounded-2xl space-y-6"
@@ -222,6 +265,12 @@ function Checkout() {
                 <span>Ürün Toplamı</span>
                 <span>{tamamlananSiparis.urunToplami.toFixed(2)} TL</span>
               </div>
+              {tamamlananSiparis.endirimTutari > 0 && (
+                <div className="flex justify-between" style={{ color: '#6B7F5B' }}>
+                  <span>İndirim {tamamlananSiparis.kuponKodu ? `(${tamamlananSiparis.kuponKodu})` : ''}</span>
+                  <span>-{tamamlananSiparis.endirimTutari.toFixed(2)} TL</span>
+                </div>
+              )}
               <div className="flex justify-between" style={{ color: '#666666' }}>
                 <span>Teslimat Ücreti</span>
                 <span>{tamamlananSiparis.teslimatUcreti.toFixed(2)} TL</span>
@@ -243,7 +292,6 @@ function Checkout() {
             Bizi tercih ettiğiniz için teşekkür ederiz.
           </div>
         </div>
-        {/* ============ MAKBUZ SONU ============ */}
 
         <div className="flex flex-col sm:flex-row gap-3 mt-8">
           <button
@@ -355,11 +403,74 @@ function Checkout() {
           />
         </div>
 
+        {/* ============ KUPON BOLUMU ============ */}
+        <div className="bg-paper-dark/30 rounded-2xl p-5 border border-ink/5">
+          {!uygulananKupon ? (
+            <>
+              <label className="block text-sm text-charcoal/70 mb-2 font-medium">
+                İndirim Kuponunuz Var mı?
+              </label>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={kuponKodu}
+                  onChange={(e) => {
+                    setKuponKodu(e.target.value.toUpperCase());
+                    setKuponHata('');
+                  }}
+                  placeholder="Kupon kodunuzu girin"
+                  className="flex-1 border border-ink/20 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-rose bg-paper uppercase text-sm"
+                />
+                <button
+                  type="button"
+                  onClick={kuponuUygula}
+                  disabled={kuponDogrulaniyor || !kuponKodu.trim()}
+                  className="bg-moss text-paper px-5 py-2.5 rounded-xl text-sm hover:bg-moss/90 transition-all duration-200 active:scale-95 disabled:opacity-60 whitespace-nowrap"
+                >
+                  {kuponDogrulaniyor ? 'Kontrol...' : 'Uygula'}
+                </button>
+              </div>
+              {kuponHata && <p className="text-xs text-rose-dark mt-2">{kuponHata}</p>}
+            </>
+          ) : (
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="flex items-center gap-2">
+                  <svg className="w-5 h-5 text-moss" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M5 13l4 4L19 7" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                  <span className="font-display text-lg text-ink">{uygulananKupon.kod}</span>
+                </div>
+                <p className="text-xs text-moss mt-1">
+                  {uygulananKupon.endirimTuru === 'YUZDE'
+                    ? `%${uygulananKupon.endirimDeger} indirim uygulandı`
+                    : `${Number(uygulananKupon.endirimDeger).toFixed(2)} TL indirim uygulandı`
+                  }
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={kuponuKaldir}
+                className="text-xs text-rose-dark hover:underline"
+              >
+                Kaldır
+              </button>
+            </div>
+          )}
+        </div>
+        {/* ============ KUPON BOLUMU SONU ============ */}
+
         <div className="bg-paper-dark/50 rounded-2xl p-5 space-y-2 text-charcoal">
           <div className="flex justify-between text-sm">
             <span>Ürün Toplamı</span>
             <span>{urunToplami.toFixed(2)} TL</span>
           </div>
+          {endirimTutari > 0 && (
+            <div className="flex justify-between text-sm text-moss">
+              <span>İndirim</span>
+              <span>-{endirimTutari.toFixed(2)} TL</span>
+            </div>
+          )}
           <div className="flex justify-between text-sm">
             <span>Teslimat Ücreti</span>
             <span>{teslimatUcreti.toFixed(2)} TL</span>

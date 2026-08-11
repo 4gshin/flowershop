@@ -6,6 +6,7 @@ import AdminUrunler from './AdminUrunler';
 import AdminKategoriler from './AdminKategoriler';
 import AdminBolgeler from './AdminBolgeler';
 import AdminSiparisler from './AdminSiparisler';
+import AdminKuponlar from './AdminKuponlar';
 import AdminAuditLog from './AdminAuditLog';
 
 const SEKMELER = [
@@ -14,6 +15,7 @@ const SEKMELER = [
   { id: 'kategoriler', ad: 'Kategoriler' },
   { id: 'bolgeler', ad: 'Teslimat Bölgeleri' },
   { id: 'siparisler', ad: 'Siparişler' },
+  { id: 'kuponlar', ad: 'Kuponlar' },
   { id: 'audit', ad: 'İşlem Geçmişi' }
 ];
 
@@ -50,6 +52,7 @@ function AdminLayout() {
         {aktifSekme === 'kategoriler' && <AdminKategoriler />}
         {aktifSekme === 'bolgeler' && <AdminBolgeler />}
         {aktifSekme === 'siparisler' && <AdminSiparisler />}
+        {aktifSekme === 'kuponlar' && <AdminKuponlar />}
         {aktifSekme === 'audit' && <AdminAuditLog />}
       </div>
     </div>
